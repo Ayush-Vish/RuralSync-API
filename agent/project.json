@@ -1,0 +1,26 @@
+{
+  "name": "agent",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "agent/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "agent:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "agent:build:development"
+        },
+        "production": {
+          "buildTarget": "agent:build:production"
+        }
+      }
+    }
+  }
+}

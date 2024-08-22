@@ -1,0 +1,26 @@
+{
+  "name": "shopkeeper",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "shopkeeper/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "shopkeeper:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "shopkeeper:build:development"
+        },
+        "production": {
+          "buildTarget": "shopkeeper:build:production"
+        }
+      }
+    }
+  }
+}

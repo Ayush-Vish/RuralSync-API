@@ -35,7 +35,13 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/rural-backend-e2e/**/*"]
+      "exclude": [
+        "apps/rural-backend-e2e/**/*",
+        "auth-e2e/**/*",
+        "customer-e2e/**/*",
+        "agent-e2e/**/*",
+        "shopkeeper-e2e/**/*"
+      ]
     }
   ]
 }
