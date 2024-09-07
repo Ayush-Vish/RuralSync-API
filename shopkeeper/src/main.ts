@@ -2,15 +2,34 @@
 import express from 'express';
 import * as path from 'path';
 import routes from './routes/routes';
+import swaggerUi from 'swagger-ui-express';
+import swaggerjsdoc from 'swagger-jsdoc'
 const app = express();
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+const swaggerOptions = {
+  swaggerDefinition: {
+      openapi: '3.0.0',
+      info: {
+          title: 'Service Provider API',
+          description: 'Employee API Information',
+          contact: {
+              name: 'Sagi Weizmann'
+          },
+      },
+      servers: [
+          {
+              url: "http://localhost:8080/v1"
+          }
+      ],
+  },
+  apis: ['./src/api/routes/v1/*.js']
+}
 app.use("/" ,routes );
 
 
-app.get('/api', (req, res) => {
-  res.send({ message: 'Welcome to shopkeeper!' });
-});
+
+
 
 
 const port = process.env.PORT || 3334;
