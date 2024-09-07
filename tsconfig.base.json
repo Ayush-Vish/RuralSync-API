@@ -15,7 +15,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@org/db": ["db/src/index.ts"]
+      "@org/db": ["db/src/index.ts"],
+      "@org/middlewares": ["middlewares/src/index.ts"],
+      "@org/utils": ["utils/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
