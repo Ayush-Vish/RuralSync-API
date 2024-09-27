@@ -4,36 +4,18 @@ import authRoutes from "./routes/routes";
 import { connectToDb } from '@org/db';
 import swaggerjsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import { errorMiddleware } from '@org/utils';
+import cookieParser from 'cookie-parser';
 const app = express();
 connectToDb();
-const swaggerOptions = {
-  swaggerDefinition: {
-      openapi: '3.0.0',
-      info: {
-          title: 'Service Provider API',
-          description: 'Employee API Information',
-          contact: {
-              name: 'Sagi Weizmann'
-          },
-      },
-      servers: [
-          {
-              url: "http://localhost:8080/v1"
-          }
-      ],
-  },
-  apis: ['./src/api/routes/v1/*.js']
-}
-
-
-
-const swaggerDocs = swaggerjsdoc(swaggerOptions );
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use('/auth' ,authRoutes);
-
+app.use("*" ,errorMiddleware )
 const port = process.env.PORT || 3333;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+  console.log(`Listening at http://localhost:${port}/auth`);
 });
 server.on('error', console.error);

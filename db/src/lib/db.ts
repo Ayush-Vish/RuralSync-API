@@ -21,3 +21,4 @@ export * from "./models/agent.model"
 export * from "./models/customer.model"
 export * from "./models/serviceProvider.model";
 export * from "./models/session.model"
+export * from "./models/org.model"

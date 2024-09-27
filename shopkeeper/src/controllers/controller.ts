@@ -1,4 +1,4 @@
-import { ServiceProvider} from "@org/db"
+import { Org, RequestWithUser, ServiceProvider} from "@org/db"
 import { NextFunction, Request, Response } from "express";
 
 import { ApiError } from "@org/utils";
@@ -33,6 +33,41 @@ const updateServiceProvider = async (req: Request, res: Response, next: NextFunc
     };
     
 
+
+
+const registerOrg = async (req: RequestWithUser, res: Response, next: NextFunction) =>  {
+  try {
+    const {
+      orgName , 
+      address ,
+      phone,
+    } = req.body;
+    if(!orgName || !address || !phone) {
+      return next(new ApiError('All fields are required', 400));
+    }
+    console.log(req.user.id);
+    const serviceProvider = await ServiceProvider.findById(req.user.id);
+    if(!serviceProvider) {
+      return next(new ApiError('Service Provider not found', 404));
+    }
+    const newOrg = await Org.create({
+      name : orgName,
+      address,
+      phone,
+      ownerId: req.user.id,
+    });
+    return res.status(201).json({ message: 'Organization created successfully', data: newOrg });
+
+  }catch (error) {
+    return next(new ApiError('An error occurred', 500));
+  }
+}
+
+
+
+
+
 export {
-      getServiceProviderById
+  getServiceProviderById, 
+  registerOrg
 }

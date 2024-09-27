@@ -10,6 +10,11 @@ const serviceProviderSchema = new Schema({
   password: { type: String, required: true },
   phone: { type: String },
   address: { type: String },
+  serviceCompany: {
+    type: Schema.Types.ObjectId, // Refers to a ServiceCompany model
+    ref: 'Org',
+    required: false, // Will be added after authentication
+  },
   isVerified: {
     type: Boolean,
     default: false,
@@ -17,9 +22,11 @@ const serviceProviderSchema = new Schema({
   clients: [{ type: Schema.Types.ObjectId, ref: 'Client' }],
   agents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
   services: [{ type: String }],
+  refreshToken: { type: String }, // For token refresh
   createdAt: { type: Date, default: Date.now },
 });
 
+// Pre-save hook to hash the password
 serviceProviderSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
@@ -28,8 +35,8 @@ serviceProviderSchema.pre('save', async function (next) {
   return next();
 });
 
-
-serviceProviderSchema.method("signToken",function(){
+// Method to sign JWT token
+serviceProviderSchema.method('signToken', function () {
   return sign(
     {
       id: this._id,
@@ -39,11 +46,8 @@ serviceProviderSchema.method("signToken",function(){
     },
     'SOME_SECRET'
   );
-})
+});
 
-const ServiceProvider = mongoose.model(
-  'ServiceProvider',
-  serviceProviderSchema
-);
+const ServiceProvider = mongoose.model('ServiceProvider', serviceProviderSchema);
 
 export { ServiceProvider };

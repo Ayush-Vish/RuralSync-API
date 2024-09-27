@@ -1,5 +1,5 @@
 import { Agent, Client, Role, ServiceProvider } from '@org/db';
-import { sign } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import { Response } from 'express';
 import { Mongoose, ObjectId, Schema } from 'mongoose';
 
@@ -7,6 +7,22 @@ import { Mongoose, ObjectId, Schema } from 'mongoose';
 export function utils(): string {
   return 'utils';
 }
+
+
+export const errorMiddleware = (err,req,res,next) =>{
+  err.status = err.status || 500
+  console.log(err.message)
+  err.message  = err.message || "Something went Wrong"
+  res.status(err.status).json({
+      success:false,
+      message:err.message,
+      stack:err.stack
+      
+  })
+}
+
+
+
 
 
 export class ApiResponse  {
@@ -44,15 +60,12 @@ export const cookieOptions : CookieOptions = {
 };
 
 
-export const generateAccessAndRefreshToken = (role : Role , id : ObjectId)  : {
-  accessToken: string;
-  refreshToken: string;
-}=> {
+export const generateAccessAndRefreshToken = async (role : Role , id :any)  => {
   try {
     let user = null;
     switch (role ) {
       case "CLIENT" :
-        user = Client.findById(id);
+         user = Client.findById(id);
         break;
       case "AGENT" :
         user = Agent.findById(id);
@@ -67,24 +80,26 @@ export const generateAccessAndRefreshToken = (role : Role , id : ObjectId)  : {
     }
     const accessToken =  sign(
       {
-        id: user._id,
-        email: user.email,
-        name: user.name,
+        id: await user._id,
+        email: await user.email,
+        name: await  user.name,
         role,
       },
-      process.env.ACCESS_TOKEN_SECRET,
+      "SOME_SECRET",
       {
-        expiresIn: "15m",
+        expiresIn: "7d",
       }
     );
+    console.log(verify(accessToken  , "SOME_SECRET"));
     const refreshToken = sign(
       {
-        id: user._id,
-        email: user.email,
-        name: user.name,
+        id:await  user._id,
+        email:await user.email,
+        name: await user.name,
         role,
       },
-      process.env.REFRESH_TOKEN_SECRET,
+      "SOME_SECRET",
+
       {
         expiresIn: "7d",
       }
@@ -92,6 +107,6 @@ export const generateAccessAndRefreshToken = (role : Role , id : ObjectId)  : {
     return { accessToken, refreshToken };
 
   } catch (error) {
-    throw new ApiError("Error generating token", 500);
+    throw new ApiError("Error generating token" + error.message, 500);
   }
 } 
