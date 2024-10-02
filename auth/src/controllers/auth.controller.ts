@@ -292,4 +292,34 @@ const logout = async (
   }
 };
 
-export { register, login, logout };
+
+const getUserDetails = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    const { role, id } = req.user;
+
+    let user;
+    switch (role) {
+      case 'SERVICE_PROVIDER':
+        user = await ServiceProvider.findById(id);
+        break;
+      case 'AGENT':
+        user = await Agent.findById(id);
+        break;
+      case 'CLIENT':
+        user = await Client.findById(id);
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    if (!user) {
+      return next(new ApiError('User not found', 404));
+    }
+
+    return res.status(200).json({ data: user });
+  } catch (error) {
+    return next(new ApiError('An error occurred: ' + error.message, 500));
+  }
+};
+
+export { register, login, logout  ,getUserDetails};

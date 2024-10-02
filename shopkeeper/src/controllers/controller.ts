@@ -1,6 +1,5 @@
-import { Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
+import { Agent, Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
 import { NextFunction, Request, Response } from 'express';
-
 import { ApiError } from '@org/utils';
 
 const getServiceProviderById = async (req: Request, res: Response) => {
@@ -74,9 +73,13 @@ const registerOrg = async (
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
-const getOrgDetails = async (req: RequestWithUser, res: Response, next : NextFunction) =>  {
+const getOrgDetails = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    console.log("sdfjbsdjkfsdjfnsdk")
+    console.log('sdfjbsdjkfsdjfnsdk');
     console.log(req.user.id);
     const org = await Org.findOne({ ownerId: req.user.id });
     if (!org) {
@@ -87,48 +90,87 @@ const getOrgDetails = async (req: RequestWithUser, res: Response, next : NextFun
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
-}
-const addNewService = async(  req: RequestWithUser, res: Response, next: NextFunction) =>  {
+};
+const addNewService = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-      console.log("Add new service");
-      const {
-        name,
-        description,
-        basePrice,
-        category,
-        availability,
-        estimatedDuration
-      } = req.body;
-      const ownerId = req.user.id;
-      if (!name || !description || !basePrice || !category || !availability) {
-        return next(new ApiError('All fields are required', 400));
-      }
-      if(!ownerId) {
-        return next(new ApiError('Owner Id not found', 400));
-      }
-      const org = await Org.findOne({ ownerId: req.user.id });
-      if (!org) {
-        return next(new ApiError('Organization not found', 404));
-      }
-      const newService = await new Service({
-        name,
-        description,
-        basePrice,
-        category,
-        availability,
-        estimatedDuration,
-        ownerId,
-        serviceCompany: org._id,
-        serviceProvider: org.ownerId,
-      })
-      await newService.save();
-      await org.services.push(newService._id);
-      await org.save();
-      return res.status(201).json({ message: 'Service added successfully', data: newService });
-
+    console.log('Add new service');
+    const {
+      name,
+      description,
+      basePrice,
+      category,
+      availability,
+      estimatedDuration,
+    } = req.body;
+    const ownerId = req.user.id;
+    if (!name || !description || !basePrice || !category || !availability) {
+      return next(new ApiError('All fields are required', 400));
+    }
+    if (!ownerId) {
+      return next(new ApiError('Owner Id not found', 400));
+    }
+    const org = await Org.findOne({ ownerId: req.user.id });
+    if (!org) {
+      return next(new ApiError('Organization not found', 404));
+    }
+    const newService = await new Service({
+      name,
+      description,
+      basePrice,
+      category,
+      availability,
+      estimatedDuration,
+      ownerId,
+      serviceCompany: org._id,
+      serviceProvider: org.ownerId,
+    });
+    await newService.save();
+    await org.services.push(newService._id);
+    await org.save();
+    return res
+      .status(201)
+      .json({ message: 'Service added successfully', data: newService });
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
-}
+};
 
-export { getServiceProviderById, registerOrg, getOrgDetails , addNewService , updateServiceProvider };
+const assignAgent = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log('Assign Agent');
+    const { agentId, serviceId } = req.body;
+    if (!agentId || !serviceId) {
+      return next(new ApiError('Agent Id and Service Id are required', 400));
+    }
+    const service = await Service.findById(serviceId);
+    if (!service) {
+      return next(new ApiError('Service not found', 404));
+    }
+    const agent = await Agent.findById(agentId);
+    if (!agent) {
+      return next(new ApiError('Agent not found', 404));
+    }
+    await service.assignedAgents.push(agentId);
+    await service.save();
+    return res.status(200).json({ message: 'Agent assigned successfully' });
+  } catch (error) {
+    return next(new ApiError('An error occurred: ' + error.message, 500));
+  }
+};
+
+export {
+  getServiceProviderById,
+  registerOrg,
+  getOrgDetails,
+  addNewService,
+  updateServiceProvider,
+  assignAgent
+};

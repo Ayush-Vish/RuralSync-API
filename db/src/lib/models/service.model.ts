@@ -5,7 +5,6 @@ const extraTaskSchema = new Schema({
   extraPrice: { type: Number, required: true }, // Additional cost for this task
   timeAdded: { type: String }, // Extra time needed for the task
 });
-
 const serviceSchema = new Schema({
   name: { type: String, required: true }, // e.g., "Fan Repair"
   description: { type: String, required: true }, // Detailed description of the service

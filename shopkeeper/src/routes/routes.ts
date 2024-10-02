@@ -1,5 +1,5 @@
 import express from 'express';
-import { addNewService, getOrgDetails, getServiceProviderById, registerOrg } from '../controllers/controller';
+import { addNewService, assignAgent, getOrgDetails, getServiceProviderById, registerOrg } from '../controllers/controller';
 import { isAuthorized, verifyJWT } from '@org/utils';
 
 const router = express.Router();
@@ -19,6 +19,8 @@ router.post('/registerOrg' , verifyJWT ,isAuthorized(
 ) ,registerOrg); 
 
 router.post("/add-new-service" , verifyJWT, isAuthorized(["SERVICE_PROVIDER"]) , addNewService);
+
+router.post("/assign-agent" , verifyJWT, isAuthorized(["SERVICE_PROVIDER"]) , assignAgent);
 
 
 /**
