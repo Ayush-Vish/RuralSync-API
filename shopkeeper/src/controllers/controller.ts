@@ -97,6 +97,7 @@ const addNewService = async(  req: RequestWithUser, res: Response, next: NextFun
         basePrice,
         category,
         availability,
+        estimatedDuration
       } = req.body;
       const ownerId = req.user.id;
       if (!name || !description || !basePrice || !category || !availability) {
@@ -115,10 +116,15 @@ const addNewService = async(  req: RequestWithUser, res: Response, next: NextFun
         basePrice,
         category,
         availability,
+        estimatedDuration,
         ownerId,
-      }).save();
-      org.services.push(newService._id);
-      
+        serviceCompany: org._id,
+        serviceProvider: org.ownerId,
+      })
+      await newService.save();
+      await org.services.push(newService._id);
+      await org.save();
+      return res.status(201).json({ message: 'Service added successfully', data: newService });
 
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));

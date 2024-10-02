@@ -22,6 +22,7 @@ const serviceSchema = new Schema({
   additionalTasks: [extraTaskSchema], // List of extra tasks added during service
   ratings: { type: Number, default: 0 }, // Average rating for the service
   reviews: [{ type: Schema.Types.ObjectId, ref: 'Review' }], // Associated reviews
+  assignedAgents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }], // Agents assigned to the service
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
