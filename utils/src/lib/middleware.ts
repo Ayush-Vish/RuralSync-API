@@ -1,7 +1,7 @@
 import { Agent, Client, RequestWithUser, ServiceProvider } from '@org/db';
 import { ApiError } from './utils';
 import { verify } from 'jsonwebtoken';
-import { NextFunction, Response, Request } from 'express';
+import { NextFunction, Response } from 'express';
 
 export const verifyJWT = async (
   req: RequestWithUser,
@@ -9,6 +9,7 @@ export const verifyJWT = async (
   next: NextFunction
 ) => {
   try {
+    console.log("req.cookies" , req.cookies);
     // Get token from either cookies or Authorization header
     const token =
       req.cookies?.accessToken ||
@@ -21,6 +22,7 @@ export const verifyJWT = async (
     // Verify token
     const decodedToken: any = verify(token, 'SOME_SECRET');
     console.log("decodedToken" , decodedToken);
+    console.log("decodedToken" , decodedToken);
     if (!decodedToken || !decodedToken.role) {
       return next(new ApiError('Invalid Access Token', 401));
     }
@@ -29,6 +31,7 @@ export const verifyJWT = async (
     const { role } = decodedToken;
 
     // Fetch user based on role and decoded token ID
+    console.log(decodedToken.id)
     let user = null;
     switch (role) {
       case 'CLIENT':

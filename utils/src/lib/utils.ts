@@ -65,13 +65,13 @@ export const generateAccessAndRefreshToken = async (role : Role , id :any)  => {
     let user = null;
     switch (role ) {
       case "CLIENT" :
-         user = Client.findById(id);
+         user =await Client.findById(id);
         break;
       case "AGENT" :
-        user = Agent.findById(id);
+        user = await Agent.findById(id);
         break;
       case "SERVICE_PROVIDER" :
-        user = ServiceProvider.findById(id);
+        user =await ServiceProvider.findById(id);
         break;
 
     }
