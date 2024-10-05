@@ -56,13 +56,14 @@ export const verifyJWT = async (
     if (!user) {
       return next(new ApiError('Invalid Access Token', 401));
     }
-
+    const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress ;
     // Attach user details to the request object
     req.user = {
       id: user.id,
       email: user.email,
       role: decodedToken.role,
-      name: user.username || user.name, // Assuming the user has username or name
+      name: user.username || user.name, 
+      ip
     };
 
     next();

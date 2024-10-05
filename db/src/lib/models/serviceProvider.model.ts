@@ -10,6 +10,7 @@ const serviceProviderSchema = new Schema({
   password: { type: String, required: true },
   phone: { type: String },
   address: { type: String },
+  ip: { type: String },
   serviceCompany: {
     type: Schema.Types.ObjectId, // Refers to a ServiceCompany model
     ref: 'Org',

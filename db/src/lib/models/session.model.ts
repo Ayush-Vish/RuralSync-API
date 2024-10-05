@@ -18,6 +18,7 @@ export type User = {
   role: Role;
   email: string;
   name: string;
+  ip : string;
   
 };
 export interface RequestWithUser extends Request  {

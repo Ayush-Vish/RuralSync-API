@@ -9,6 +9,7 @@ const agentSchema = new Schema({
     phone: { type: String, required: true },
     clients: [{ type: Schema.Types.ObjectId, ref: 'Client' }],
     serviceProvider: { type: Schema.Types.ObjectId, ref: 'ServiceProvider' },
+    ip: { type: String },
     refreshToken: { type: String }, // For token refresh
     createdAt: { type: Date, default: Date.now }
 });

@@ -14,6 +14,8 @@ const clientSchema = new Schema({
     postalCode: String,
     country: String
   },
+
+  ip: { type: String },
   refreshToken: { type: String }, // For token refresh
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

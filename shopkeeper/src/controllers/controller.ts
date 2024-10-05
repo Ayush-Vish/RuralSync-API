@@ -13,6 +13,7 @@ const getServiceProviderById = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'An error occurred' });
   }
 };
+
 const updateServiceProvider = async (
   req: Request,
   res: Response,
@@ -33,6 +34,7 @@ const updateServiceProvider = async (
     return next(new ApiError('An error occurred', 500));
   }
 };
+
 const registerOrg = async (
   req: RequestWithUser,
   res: Response,
@@ -73,6 +75,7 @@ const registerOrg = async (
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
+
 const getOrgDetails = async (
   req: RequestWithUser,
   res: Response,
@@ -91,6 +94,7 @@ const getOrgDetails = async (
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
+
 const addNewService = async (
   req: RequestWithUser,
   res: Response,
@@ -166,11 +170,36 @@ const assignAgent = async (
   }
 };
 
+const availableAgents = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log('Check Availability');
+    const ownerId = req.user.id;
+    const org = await Org.findOne({
+      ownerId,
+    });
+    if (!org) {
+      return next(new ApiError('Organization not found', 404));
+    }
+    const availableAgents = await Agent.find({
+      availability: true,
+      serviceCompany: org._id,
+    });
+    return res.status(200).json(availableAgents);
+  } catch (error) {
+    return next(new ApiError('An error occurred: ' + error.message, 500));
+  }
+};
+
 export {
   getServiceProviderById,
   registerOrg,
   getOrgDetails,
   addNewService,
   updateServiceProvider,
-  assignAgent
+  assignAgent,
+  availableAgents,
 };
