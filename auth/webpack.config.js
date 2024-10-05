@@ -5,6 +5,7 @@ module.exports = {
   output: {
     path: join(__dirname, '../dist/auth'),
   },
+  
   plugins: [
     new NxAppWebpackPlugin({
       target: 'node',
