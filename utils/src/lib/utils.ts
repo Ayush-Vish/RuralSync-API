@@ -2,6 +2,7 @@ import { Agent, Client, Role, ServiceProvider } from '@org/db';
 import { sign } from 'jsonwebtoken';
 import { Response } from 'express';
 import { Mongoose, ObjectId, Schema } from 'mongoose';
+import {verify} from 'jsonwebtoken'
 
 
 export function utils(): string {
@@ -39,7 +40,7 @@ type CookieOptions =  {
 export const cookieOptions : CookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 100,
   httpOnly: true,
-  secure: true,
+  secure: false,
   sameSite: "none",
 };
 
@@ -95,3 +96,11 @@ export const generateAccessAndRefreshToken = (role : Role , id : ObjectId)  : {
     throw new ApiError("Error generating token", 500);
   }
 } 
+
+
+
+
+
+
+
+

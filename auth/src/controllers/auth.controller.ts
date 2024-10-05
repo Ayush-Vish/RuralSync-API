@@ -76,7 +76,7 @@ const clientRegister = async (
       data: newClient,
     });
   } catch (error) {
-    return next(new ApiError('An error occurred', 500));
+    return next(new ApiError('An error occurred' +error.message , 500));
   }
 };
 
@@ -112,25 +112,27 @@ const agentRegister = async (
       data: newAgent,
     });
   } catch (error) {
+    console.log(error)
     return next(new ApiError('An error occurred', 500));
   }
 };
 
 const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log(req.body)
     const { role } = req.body;
     switch (role) {
       case 'SERVICE_PROVIDER':
         return await registerServiceProvider(req, res, next);
       case 'AGENT':
         return await agentRegister(req, res, next);
-        break;
       case 'CLIENT':
         return await clientRegister(req, res, next);
       default:
         return res.status(400).json({ message: 'Invalid role' });
     }
   } catch (error) {
+
     console.log(error);
   }
 };
@@ -153,7 +155,7 @@ const loginServiceProvider = async (
     // Validate password
     const isMatch = await bcrypt.compare(password, serviceProvider.password);
     if (!isMatch) {
-      return next(new ApiError('Invalid credentials', 400));
+      return next(new ApiError('Invalid credentials1111111111', 400));
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
@@ -219,7 +221,7 @@ const loginClient = async (req: Request, res: Response, next: NextFunction) => {
     // Validate password
     const isMatch = await bcrypt.compare(password, client.password);
     if (!isMatch) {
-      return next(new ApiError('Invalid credentials', 400));
+      return next(new ApiError('Invalid credentials11111111', 400));
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
@@ -300,4 +302,7 @@ const logout = async (
   }
 };
 
-export { register, login, logout };
+
+
+
+export { register, login, logout};

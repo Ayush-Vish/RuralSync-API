@@ -14,6 +14,11 @@ const clientSchema = new Schema({
     postalCode: String,
     country: String
   },
+  profile: {
+    bio: { type: String },
+    profilePicture: { type: String }
+  },
+  bookings: {  type: mongoose.Schema.Types.ObjectId,  ref: 'Booking' },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
