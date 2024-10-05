@@ -16,6 +16,10 @@ export type Role = 'CLIENT' | 'AGENT' | 'SERVICE_PROVIDER';
 export type User = {
   id: string;
   role: Role;
+  email: string;
+  name: string;
+  ip : string;
+  
 };
 export interface RequestWithUser extends Request  {
   user: User;

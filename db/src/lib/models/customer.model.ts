@@ -19,6 +19,9 @@ const clientSchema = new Schema({
     profilePicture: { type: String }
   },
   bookings: {  type: mongoose.Schema.Types.ObjectId,  ref: 'Booking' },
+
+  ip: { type: String },
+  refreshToken: { type: String }, // For token refresh
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

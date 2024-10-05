@@ -8,6 +8,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Agent, Client, RequestWithUser, ServiceProvider } from '@org/db';
 import { sign } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+
 const registerServiceProvider = async (
   req: Request,
   res: Response,
@@ -18,9 +19,7 @@ const registerServiceProvider = async (
     if (!email || !password) {
       return next(new ApiError('Email and password are required', 400));
     }
-    const userExists = await ServiceProvider.findOne({
-      email,
-    });
+    const userExists = await ServiceProvider.findOne({ email });
     if (userExists) {
       return next(new ApiError('Service Provider already exists', 400));
     }
@@ -40,7 +39,7 @@ const registerServiceProvider = async (
       data: newServiceProvider,
     });
   } catch (error) {
-    console.log(error);
+    return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
 
@@ -50,13 +49,11 @@ const clientRegister = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
     if (!email || !password) {
       return next(new ApiError('Email and password are required', 400));
     }
-    const clientExists = await Client.findOne({
-      email,
-    });
+    const clientExists = await Client.findOne({ email });
     if (clientExists) {
       return next(new ApiError('Client already exists', 400));
     }
@@ -76,7 +73,7 @@ const clientRegister = async (
       data: newClient,
     });
   } catch (error) {
-    return next(new ApiError('An error occurred' +error.message , 500));
+    return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
 
@@ -86,13 +83,11 @@ const agentRegister = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, role } = req.body;
-    if (!email || !password) {
-      return next(new ApiError('Email and password are required', 400));
+    const { email, password, name } = req.body;
+    if (!email || !password || !name) {
+      return next(new ApiError('Email, password, and name are required', 400));
     }
-    const agentExists = await Agent.findOne({
-      email,
-    });
+    const agentExists = await Agent.findOne({ email });
     if (agentExists) {
       return next(new ApiError('Agent already exists', 400));
     }
@@ -112,15 +107,18 @@ const agentRegister = async (
       data: newAgent,
     });
   } catch (error) {
-    console.log(error)
-    return next(new ApiError('An error occurred', 500));
+    return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
 
 const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log(req.body)
-    const { role } = req.body;
+    const { role, email, password } = req.body;
+
+    if (!email || !password || !role) {
+      return next(new ApiError('Email, password, and role are required', 400));
+    }
+
     switch (role) {
       case 'SERVICE_PROVIDER':
         return await registerServiceProvider(req, res, next);
@@ -129,11 +127,10 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
       case 'CLIENT':
         return await clientRegister(req, res, next);
       default:
-        return res.status(400).json({ message: 'Invalid role' });
+        return next(new ApiError('Invalid role', 400));
     }
   } catch (error) {
-
-    console.log(error);
+    return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
 
@@ -143,6 +140,7 @@ const loginServiceProvider = async (
   next: NextFunction
 ) => {
   try {
+    console.log('Login Service Provider');
     const { email, password } = req.body;
     if (!email || !password) {
       return next(new ApiError('Email and password are required', 400));
@@ -160,7 +158,7 @@ const loginServiceProvider = async (
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
       'SERVICE_PROVIDER',
-      serviceProvider.id 
+      serviceProvider._id
     );
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
@@ -170,7 +168,7 @@ const loginServiceProvider = async (
       data: serviceProvider,
     });
   } catch (error) {
-    return next(new ApiError('An error occurred', 500));
+    return next(new ApiError('An error occurred' + error.message, 500));
   }
 };
 
@@ -254,7 +252,6 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
         return res.status(400).json({ message: 'Invalid role' });
     }
   } catch (error) {
-    console.log(error);
     return next(new ApiError('An error occurred', 500));
   }
 };
@@ -268,25 +265,18 @@ const logout = async (
     const { role } = req.query;
     switch (role) {
       case 'SERVICE_PROVIDER':
-        await ServiceProvider.findByIdAndDelete(req.user.id, {
-          $unset: {
-            refreshToken: 1,
-          },
+        await ServiceProvider.findByIdAndUpdate(req.user.id, {
+          $unset: { refreshToken: 1 },
         });
         break;
-
       case 'AGENT':
-        await Agent.findByIdAndDelete(req.user.id, {
-          $unset: {
-            refreshToken: 1,
-          },
+        await Agent.findByIdAndUpdate(req.user.id, {
+          $unset: { refreshToken: 1 },
         });
         break;
       case 'CLIENT':
-        await Client.findByIdAndDelete(req.user.id, {
-          $unset: {
-            refreshToken: 1,
-          },
+        await Client.findByIdAndUpdate(req.user.id, {
+          $unset: { refreshToken: 1 },
         });
         break;
       default:
@@ -303,6 +293,33 @@ const logout = async (
 };
 
 
+const getUserDetails = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    const { role, id } = req.user;
 
+    let user;
+    switch (role) {
+      case 'SERVICE_PROVIDER':
+        user = await ServiceProvider.findById(id);
+        break;
+      case 'AGENT':
+        user = await Agent.findById(id);
+        break;
+      case 'CLIENT':
+        user = await Client.findById(id);
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid role' });
+    }
 
-export { register, login, logout};
+    if (!user) {
+      return next(new ApiError('User not found', 404));
+    }
+
+    return res.status(200).json({ data: user });
+  } catch (error) {
+    return next(new ApiError('An error occurred: ' + error.message, 500));
+  }
+};
+
+export { register, login, logout  ,getUserDetails};
