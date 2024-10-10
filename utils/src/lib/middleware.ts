@@ -11,14 +11,16 @@ export const verifyJWT = async (
   try {
     console.log("req.cookies" , req.cookies);
     // Get token from either cookies or Authorization header
-    const token =
-      req.cookies?.accessToken ||
-      req.header('Authorization')?.replace('Bearer ', '');
+    // console.log("addddiiiil",req.cookies.accessToken)
+    const {token} = req.cookies
+      // req.cookies?.accessToken ||
+      // req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
       return next(new ApiError('Access Token is required', 401));
     }
 
+    console.log("toooooken",token)
     // Verify token
     const decodedToken: any = verify(token, 'SOME_SECRET');
     console.log("decodedToken" , decodedToken);

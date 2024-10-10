@@ -4,7 +4,7 @@ import { Agent, Client, ServiceProvider } from '@org/db';
 // Get Customer Profile
 export const getCustomerProfile = async (req, res) => {
   try {
-    console.log("bkc" ,req.user)
+    // console.log("bkc" ,req.user)
     const customerId = req.user.id; 
 
     const customer = await Client.findById(customerId);
