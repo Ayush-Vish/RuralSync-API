@@ -2,7 +2,7 @@ import { Agent, Client, RequestWithUser, ServiceProvider } from '@org/db';
 import { ApiError } from './utils';
 import { verify } from 'jsonwebtoken';
 import { NextFunction, Response } from 'express';
-
+import multer from 'multer';
 export const verifyJWT = async (
   req: RequestWithUser,
   res: Response,
@@ -82,3 +82,14 @@ export const isAuthorized = (allowedRoles: UserRole[]) => {
     next();
   };
 };
+
+const upload= multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 1024 * 1024 * 5,
+  },
+})
+
+export {
+  upload
+}

@@ -40,7 +40,8 @@
         "auth-e2e/**/*",
         "customer-e2e/**/*",
         "agent-e2e/**/*",
-        "shopkeeper-e2e/**/*"
+        "shopkeeper-e2e/**/*",
+        "email-service-e2e/**/*"
       ]
     }
   ]
