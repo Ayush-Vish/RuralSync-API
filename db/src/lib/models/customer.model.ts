@@ -44,7 +44,7 @@ clientSchema.method('signToken', function () {
       id: this._id,
       email: this.email,
       name: this.name,
-      role: 'SERVICE_PROVIDER',
+      role: 'CLIENT',
     },
     'SOME_SECRET'
   );

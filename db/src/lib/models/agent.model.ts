@@ -31,7 +31,7 @@ agentSchema.pre('save', async function (next) {
         id: this._id,
         email: this.email,
         name: this.name,
-        role: 'SERVICE_PROVIDER',
+        role: 'AGENT',
       },
       'SOME_SECRET'
     );
