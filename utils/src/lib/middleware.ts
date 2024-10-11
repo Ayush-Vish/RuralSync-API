@@ -20,11 +20,11 @@ export const verifyJWT = async (
       return next(new ApiError('Access Token is required', 401));
     }
 
-    console.log("toooooken",token)
+    // console.log("toooooken",token)
     // Verify token
     const decodedToken: any = verify(token, 'SOME_SECRET');
-    console.log("decodedToken" , decodedToken);
-    console.log("decodedToken" , decodedToken);
+    // console.log("decodedToken" , decodedToken);
+    // console.log("decodedToken" , decodedToken);
     if (!decodedToken || !decodedToken.role) {
       return next(new ApiError('Invalid Access Token', 401));
     }

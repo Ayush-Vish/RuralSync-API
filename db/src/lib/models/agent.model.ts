@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const agentSchema = new mongoose.Schema({
   agentId: {
     type: String,
-    required: true,
+    // required: true,
     unique: true
   },
   name: {
