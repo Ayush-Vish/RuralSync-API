@@ -4,7 +4,7 @@ const router = express.Router();
 
 import {verifyJWT} from '@org/utils'
 import multer from 'multer'
- import {getAgentDashboard,updateServiceInBooking,deleteServiceFromBooking,getServicesForBooking,addServiceToBooking} from '../controllers/agentController'
+import {getAgentDashboard,updateServiceInBooking,deleteServiceFromBooking,getServicesForBooking,addServiceToBooking} from '../controllers/agentController'
 // Setup Multer for image uploads
 const upload = multer({ dest: 'uploads/' });
 
@@ -23,4 +23,4 @@ router.delete('/service/:serviceId',verifyJWT, deleteServiceFromBooking);
 // Get all services for a specific booking
 router.get('/booking/:bookingId/services',verifyJWT,getServicesForBooking);
 
-module.exports = router;
+export default router;
