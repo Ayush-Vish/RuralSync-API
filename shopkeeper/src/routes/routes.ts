@@ -5,6 +5,7 @@ import {
   availableAgents,
   getOrgDetails,
   registerOrg,
+  searchServices,
 } from '../controllers/controller';
 import { isAuthorized, verifyJWT } from '@org/utils';
 
@@ -49,6 +50,11 @@ router.get(
   isAuthorized(['SERVICE_PROVIDER']), 
   availableAgents
 );
+
+router.get('/search', searchServices);
+
+
+
 /**
  * TODO: Add a route to verify a Organization using legal documents using ml model
  *

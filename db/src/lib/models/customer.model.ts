@@ -1,3 +1,5 @@
+import { hash } from "bcrypt";
+import { sign } from "jsonwebtoken";
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
@@ -27,6 +29,25 @@ const clientSchema = new Schema({
 });
 
 
+clientSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
+  this.password = await hash(this.password, 10);
+  return next();
+});
 
+// Method to sign JWT token
+clientSchema.method('signToken', function () {
+  return sign(
+    {
+      id: this._id,
+      email: this.email,
+      name: this.name,
+      role: 'CLIENT',
+    },
+    'SOME_SECRET'
+  );
+});
 
 export const Client = mongoose.model('Client', clientSchema);
