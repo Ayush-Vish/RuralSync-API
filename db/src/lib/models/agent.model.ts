@@ -1,3 +1,4 @@
+import { sign } from 'jsonwebtoken';
 import mongoose from 'mongoose'
 // Define the schema for the Agent
 const agentSchema = new mongoose.Schema({
@@ -85,7 +86,18 @@ agentSchema.pre('save', function(next) {
     this.updatedAt = new Date();
     next();
   });
-  
+  // Method to sign JWT token
+agentSchema.method('signToken', function () {
+  return sign(
+    {
+      id: this._id,
+      email: this.email,
+      name: this.name,
+      role: 'CLIENT',
+    },
+    'SOME_SECRET'
+  );
+});
 
 // Create the Agent model using the schema
  export const Agent = mongoose.model('Agent', agentSchema);
