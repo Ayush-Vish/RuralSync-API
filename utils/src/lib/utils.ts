@@ -2,7 +2,6 @@ import { Agent, Client, Role, ServiceProvider } from '@org/db';
 import { sign, verify } from 'jsonwebtoken';
 import { Response } from 'express';
 import { Mongoose, ObjectId, Schema } from 'mongoose';
-// import {verify} from 'jsonwebtoken'
 
 
 export function utils(): string {
