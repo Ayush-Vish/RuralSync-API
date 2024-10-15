@@ -23,7 +23,13 @@ const registerServiceProvider = async (
     if (userExists) {
       return next(new ApiError('Service Provider already exists', 400));
     }
-    const newServiceProvider = await ServiceProvider.create(req.body);
+ // Hash password before saving to the database
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newServiceProvider = await ServiceProvider.create({
+   ...req.body,
+   password: hashedPassword, // Store hashed password
+  });
+
     const token = sign(
       {
         id: newServiceProvider._id,
@@ -57,7 +63,12 @@ const clientRegister = async (
     if (clientExists) {
       return next(new ApiError('Client already exists', 400));
     }
-    const newClient = await Client.create(req.body);
+       // Hash password before saving to the database
+      const hashedPassword = await bcrypt.hash(password,10);
+      const newClient = await Client.create({
+         ...req.body,
+         password: hashedPassword, // Store hashed password
+       });
     const token = sign(
       {
         id: newClient._id,
@@ -91,7 +102,13 @@ const agentRegister = async (
     if (agentExists) {
       return next(new ApiError('Agent already exists', 400));
     }
-    const newAgent = await Agent.create(req.body);
+      // Hash password before saving to the database
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newAgent = await Agent.create({
+        ...req.body,
+        password: hashedPassword, // Store hashed password
+      });
+  
     const token = sign(
       {
         id: newAgent._id,

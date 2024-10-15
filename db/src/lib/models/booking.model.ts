@@ -41,6 +41,12 @@ const bookingSchema = new mongoose.Schema({
         ref: 'Agent',
         required: false,
     },
+    serviceItems: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'ServiceItem',
+        },
+      ], 
 }, { timestamps: true }); // This automatically adds 'createdAt' and 'updatedAt' fields
 
 // Export the Booking model

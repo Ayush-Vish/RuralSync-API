@@ -2,19 +2,20 @@
 import express from 'express';
 import { getCustomerProfile, updateCustomerProfile, changePassword } from '../controllers/profileEdit';
 
-import {extractCustomerIdFromCookie} from '@org/middlewares'
+// import {extractCustomerIdFromCookie} from '@org/middlewares'
+import {verifyJWT} from '@org/utils'
 
 const router = express.Router();
 
 
 
 
-router.get('/customers/profile',extractCustomerIdFromCookie, getCustomerProfile);
+router.get('/customers/profile',verifyJWT, getCustomerProfile);
 
 
-router.put('/customers/profile',extractCustomerIdFromCookie, updateCustomerProfile);
+router.put('/customers/profile',verifyJWT, updateCustomerProfile);
 
 
-router.patch('/customers/password',extractCustomerIdFromCookie, changePassword);
+router.patch('/customers/password',verifyJWT, changePassword);
 
 export default router;

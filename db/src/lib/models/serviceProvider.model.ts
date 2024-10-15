@@ -22,6 +22,13 @@ const serviceProviderSchema = new Schema({
   },
   clients: [{ type: Schema.Types.ObjectId, ref: 'Client' }],
   agents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
+  booking:[{type:Schema.Types.ObjectId,ref:'Booking'}],
+  serviceItems: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ServiceItem',
+    },
+  ], 
   services: [{ type: String }],
   refreshToken: { type: String }, // For token refresh
   createdAt: { type: Date, default: Date.now },

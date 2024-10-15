@@ -165,7 +165,6 @@ const assignAgent = async (
   next: NextFunction
 ) => {
   try {
-    console.log('Assign Agent');
     const { agentId, serviceId } = req.body;
     if (!agentId || !serviceId) {
       return next(new ApiError('Agent Id and Service Id are required', 400));
