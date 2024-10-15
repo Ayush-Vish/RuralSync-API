@@ -234,7 +234,7 @@ const searchServices = async (req :Request, res: Response, next: NextFunction) =
     console.log('Search Services');
     const { searchString, latitude, longitude, page, limit } = req.query as SearchQuery;
     const services = await Service.find() ;
-    const address= 
+
     
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));  

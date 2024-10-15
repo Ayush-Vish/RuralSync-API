@@ -22,12 +22,12 @@ app.use(express.json());
 
 
 
-app.use('/api' ,customerRoutes);
-app.use('/api',bookingRoutes);
+app.use('/client' ,customerRoutes);
+app.use('/client/booking',bookingRoutes);
 
 connectToDb()
 const port = process.env.PORT || 5000;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+  console.log(`Listening at http://localhost:${port}/client`);
 });
 server.on('error', console.error);

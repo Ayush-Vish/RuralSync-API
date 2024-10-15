@@ -53,7 +53,7 @@ type CookieOptions =  {
 
 }
 export const cookieOptions : CookieOptions = {
-  maxAge: 7 * 24 * 60 * 60 * 100,
+  maxAge: 30 * 24 * 60 * 60 * 100,
   httpOnly: true,
   secure: false,
   sameSite: "none",
@@ -87,7 +87,7 @@ export const generateAccessAndRefreshToken = async (role : Role , id :any)  => {
       },
       "SOME_SECRET",
       {
-        expiresIn: "7d",
+        expiresIn: "30d",
       }
     );
     console.log(verify(accessToken  , "SOME_SECRET"));
@@ -101,7 +101,7 @@ export const generateAccessAndRefreshToken = async (role : Role , id :any)  => {
       "SOME_SECRET",
 
       {
-        expiresIn: "7d",
+        expiresIn: "30d",
       }
     );
     return { accessToken, refreshToken };

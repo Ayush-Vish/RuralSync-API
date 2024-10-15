@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import { Agent, Client, RequestWithUser, ServiceProvider } from '@org/db';
 import { sign } from 'jsonwebtoken';
-import bcrypt, { hash } from 'bcrypt';
+import bcrypt, { compare } from 'bcrypt';
 
 const registerServiceProvider = async (
   req: Request,
@@ -23,13 +23,7 @@ const registerServiceProvider = async (
     if (userExists) {
       return next(new ApiError('Service Provider already exists', 400));
     }
- // Hash password before saving to the database
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newServiceProvider = await ServiceProvider.create({
-   ...req.body,
-   password: hashedPassword, // Store hashed password
-  });
-
+    const newServiceProvider = await ServiceProvider.create(req.body);
     const token = sign(
       {
         id: newServiceProvider._id,
@@ -63,12 +57,7 @@ const clientRegister = async (
     if (clientExists) {
       return next(new ApiError('Client already exists', 400));
     }
-       // Hash password before saving to the database
-      const hashedPassword = await bcrypt.hash(password,10);
-      const newClient = await Client.create({
-         ...req.body,
-         password: hashedPassword, // Store hashed password
-       });
+    const newClient = await Client.create(req.body);
     const token = sign(
       {
         id: newClient._id,
@@ -102,13 +91,7 @@ const agentRegister = async (
     if (agentExists) {
       return next(new ApiError('Agent already exists', 400));
     }
-      // Hash password before saving to the database
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const newAgent = await Agent.create({
-        ...req.body,
-        password: hashedPassword, // Store hashed password
-      });
-  
+    const newAgent = await Agent.create(req.body);
     const token = sign(
       {
         id: newAgent._id,
@@ -163,21 +146,14 @@ const loginServiceProvider = async (
       return next(new ApiError('Email and password are required', 400));
     }
     const serviceProvider = await ServiceProvider.findOne({ email });
-    console.log('Email');  
-
     if (!serviceProvider) {
       return next(new ApiError('Invalid credentials', 400));
     }
-    console.log('Service Provider', serviceProvider);
 
-    console.log('Password', password);
-    console.log('Service Provider Password', serviceProvider.password);
-    console.log(await hash(password, 10));
     // Validate password
     const isMatch = await bcrypt.compare(password, serviceProvider.password);
     if (!isMatch) {
-      
-      return next(new ApiError('Invalid credentials1111111111', 400));
+      return next(new ApiError('Invalid credentials', 400));
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
@@ -241,9 +217,9 @@ const loginClient = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     // Validate password
-    const isMatch = await bcrypt.compare(password, client.password);
+    const isMatch = await compare(password, client.password);
     if (!isMatch) {
-      return next(new ApiError('Invalid credentials11111111', 400));
+      return next(new ApiError('Invalid credentials', 400));
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
