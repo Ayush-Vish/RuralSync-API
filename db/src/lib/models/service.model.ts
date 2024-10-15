@@ -39,7 +39,7 @@ const serviceSchema = new Schema({
   assignedAgents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
   location: {
     type: pointSchema,
-    index: '2dsphere' // This allows for geospatial queries
+    index: '2dsphere'
   },
   address: {
     street: String,

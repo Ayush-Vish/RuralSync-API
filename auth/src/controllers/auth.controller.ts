@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import { Agent, Client, RequestWithUser, ServiceProvider } from '@org/db';
 import { sign } from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcrypt, { hash } from 'bcrypt';
 
 const registerServiceProvider = async (
   req: Request,
@@ -163,13 +163,20 @@ const loginServiceProvider = async (
       return next(new ApiError('Email and password are required', 400));
     }
     const serviceProvider = await ServiceProvider.findOne({ email });
+    console.log('Email');  
+
     if (!serviceProvider) {
       return next(new ApiError('Invalid credentials', 400));
     }
+    console.log('Service Provider', serviceProvider);
 
+    console.log('Password', password);
+    console.log('Service Provider Password', serviceProvider.password);
+    console.log(await hash(password, 10));
     // Validate password
     const isMatch = await bcrypt.compare(password, serviceProvider.password);
     if (!isMatch) {
+      
       return next(new ApiError('Invalid credentials1111111111', 400));
     }
 
