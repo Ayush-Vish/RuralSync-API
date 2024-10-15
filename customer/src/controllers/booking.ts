@@ -1,5 +1,5 @@
 
-import {Booking} from '@org/db'
+import {Booking,Service} from '@org/db'
 
 
 // Utility function for date validation
@@ -7,13 +7,12 @@ const isValidDate = (date) => {
   return !isNaN(Date.parse(date));
 };
 
-// Create a Booking
 export const createBooking = async (req, res) => {
   try {
     const customerId = req.user.id; 
-    const { service, bookingDate, serviceProvider, totalPrice } = req.body; 
+    const { serviceId, bookingDate, serviceProvider, totalPrice } = req.body; 
 
-    if (!service || !bookingDate || !serviceProvider || !totalPrice) {
+    if (!serviceId || !bookingDate || !serviceProvider || !totalPrice) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
@@ -25,9 +24,15 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: 'Invalid booking date format' });
     }
 
+    // Check if the service exists
+    const service = await Service.findById(serviceId);
+    if (!service) {
+      return res.status(404).json({ message: 'Service not found' });
+    }
+
     const newBooking = await Booking.create({
       customer: customerId,
-      service,
+      service: serviceId, // Store the service ID instead of the whole object
       bookingDate,
       serviceProvider,
       totalPrice,
@@ -38,7 +43,6 @@ export const createBooking = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 // Get Customer Bookings
 export const getBookings = async (req, res) => {
   try {
