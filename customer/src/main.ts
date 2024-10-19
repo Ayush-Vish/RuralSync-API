@@ -26,7 +26,7 @@ app.use('/client' ,customerRoutes);
 app.use('/client/booking',bookingRoutes);
 
 connectToDb()
-const port = 5001;
+const port = process.env.CUSTOMER_PORT || 5002;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/client`);
 });

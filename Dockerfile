@@ -18,11 +18,15 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/dist/apps/${PROJECT} ./
+ARG PROJECT
+
+COPY --from=builder /app/dist/${PROJECT} ./
 COPY --from=builder /app/package*.json ./
 
-RUN npm ci --only=production
+RUN npm install --only=production
 
-EXPOSE 3000
+# Use the PORT from the environment variable
+ENV PORT=3000
+EXPOSE ${PORT}
 
-CMD ["node", "main.js"]
+CMD ["sh", "-c", "node main.js"]

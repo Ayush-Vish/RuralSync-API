@@ -16,7 +16,7 @@ app.use('/agent',agentRoutes);
 
 connectToDb();
 
-const port = 5004;
+const port = process.env.AGENT_PORT || 5000;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api`);
 });
