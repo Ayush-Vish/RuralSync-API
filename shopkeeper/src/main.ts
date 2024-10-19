@@ -19,7 +19,7 @@ app.get("/",(req , res ) => {
 )
 
 
-app.use("/sp" ,routes );
+app.use("/shopkeeper" ,routes );
 
 
 app.use((req, res, next) => {
@@ -31,7 +31,7 @@ app.use("*" , errorMiddleware);
 
 
 
-const port = process.env.PORT || 3332;
+const port = 5002;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/sp`);
 });

@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  nginx:
+    restart: always
+    image: nginx:latest
+    container_name: api-gateway
+    volumes:
+        - "./api-gateway/nginx.conf:/etc/nginx/conf.d/default.conf"
+    ports:
+        - "8080:80"
+  auth:
+    build:
+      context: .
+      dockerfile: ./auth/Dockerfile
+    ports:
+      - "5000:5000"
+    networks:
+      - api-gateway
+    env_file:
+      - .env
+  customer:
+    build:
+      context: .
+      dockerfile: ./customer/Dockerfile
+    ports:
+      - "5001:5001"
+    networks:
+      - api-gateway
+    env_file:
+      - .env
+  shopkeeper:
+    build:
+      context: .
+      dockerfile: ./shopkeeper/Dockerfile
+    ports:
+      - "5002:5002"
+    networks:
+      - api-gateway
+    env_file:
+      - .env
+  agent:
+    build:
+      context: .
+      dockerfile: ./agent/Dockerfile
+    ports:
+      - "5004:5004"
+    networks:
+      - api-gateway
+    env_file:
+      - .env
+ 
+
+networks:
+  api-gateway:
+    driver: bridge

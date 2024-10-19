@@ -14,7 +14,7 @@ app.use(cookieParser());
 
 app.use('/auth' ,authRoutes);
 app.use("*" ,errorMiddleware )
-const port = process.env.PORT || 3333;
+const port =5000;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/auth`);
 });

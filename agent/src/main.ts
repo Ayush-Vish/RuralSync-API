@@ -12,11 +12,11 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 
 
-app.use('/api',agentRoutes);
+app.use('/agent',agentRoutes);
 
 connectToDb();
 
-const port = process.env.PORT || 8000;
+const port = 5004;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api`);
 });
