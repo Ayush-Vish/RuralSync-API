@@ -13,7 +13,7 @@ const serviceItemSchema = new mongoose.Schema({
   },
   cost: {
     type: Number,
-    required: true,
+    // required: true,  
   },
   imageUrl: {
     type: String, 

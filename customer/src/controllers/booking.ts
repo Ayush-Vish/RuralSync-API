@@ -1,6 +1,7 @@
 import { Booking, RequestWithUser, Service } from '@org/db';
 import { ApiError } from '@org/utils';
 import { NextFunction, Request, Response } from 'express';
+import moment from 'moment';
 import mongoose, { Mongoose } from 'mongoose';
 
 // Utility function for date validation
@@ -10,7 +11,7 @@ const isValidDate = (date) => {
 type ExtraTask = {
   description: string;
   extraPrice: number;
-  timeAdded?: string;
+  // timeAdded?: string;
 };
 
 type Location = {
@@ -21,9 +22,10 @@ type Location = {
 type NewBookingData = {
   customer: mongoose.Types.ObjectId;
   service: mongoose.Types.ObjectId;
-  serviceProvider: mongoose.Types.ObjectId;
+  // serviceProvider: mongoose.Types.ObjectId;
   bookingDate: Date;
-  totalPrice: number;
+  bookingTime: string; 
+  // totalPrice: number;
   serviceItems?: ExtraTask[];
   location?: Location;
 };
@@ -37,16 +39,16 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
       bookingTime,
       extraTasks,
       location,
-      totalPrice,
-      serviceProviderId,
+      // totalPrice,
+      // serviceProviderId,
     }: {
       serviceId: string;
       bookingDate: string;
       bookingTime: string;
       extraTasks?: ExtraTask[];
       location?: Location;
-      totalPrice: number;
-      serviceProviderId: string;
+      // totalPrice: number;
+      // serviceProviderId: string;
     } = req.body;
 
     // Validate required fields
@@ -87,20 +89,29 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
       return;
     }
 
-    // Combine bookingDate and bookingTime into a proper Date object
-    const fullBookingDate = new Date(`${bookingDate}T${bookingTime}`);
-    if (isNaN(fullBookingDate.getTime())) {
-      res.status(400).json({ message: 'Invalid booking date or time format' });
-      return;
-    }
+    // Combine date and time using moment.js
+    // const fullBookingDate = moment(`${bookingDate} ${bookingTime}`, 'YYYY-MM-DD hh:mm A');
+    // if (!fullBookingDate.isValid()) {
+    //   res.status(400).json({ message: 'Invalid booking date or time format' });
+    //   return;
+    // }
+
+
+        // Validate and format the date using moment.js
+        const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format('YYYY-MM-DD');
+        if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
+          res.status(400).json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
+          return;
+        }
 
     // Build the booking object
     const newBookingData: NewBookingData = {
       customer: customerId as any,
-      service: new mongoose.Types.ObjectId(serviceId),
-      serviceProvider: new mongoose.Types.ObjectId(serviceProviderId),
-      bookingDate: fullBookingDate,
-      totalPrice,
+      service: serviceId as any ,
+      // serviceProvider: new mongoose.Types.ObjectId(serviceProviderId),
+      bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
+      bookingTime: bookingTime, // Save time as string
+      // totalPrice,
     };
 
     // If extra tasks are provided, add them to the booking
@@ -108,7 +119,7 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
       newBookingData.serviceItems = extraTasks.map((task) => ({
         description: task.description,
         extraPrice: task.extraPrice,
-        timeAdded: task.timeAdded || null,
+        // timeAdded: task.timeAdded || null,
       }));
     }
 
@@ -116,7 +127,7 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
     if (location) {
       newBookingData.location = location;
     }
-
+    console.log(newBookingData)
     // Create the new booking
     const newBooking = await Booking.create(newBookingData);
 

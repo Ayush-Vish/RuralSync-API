@@ -1,11 +1,6 @@
 import mongoose from 'mongoose';
 
 // Define the schema for an extra task
-const extraTaskSchema = new mongoose.Schema({
-  description: { type: String, required: true },
-  extraPrice: { type: Number, required: true },
-  timeAdded: { type: String }, 
-});
 
 // Define a point schema for location data
 const pointSchema = new mongoose.Schema({
@@ -64,7 +59,14 @@ const bookingSchema = new mongoose.Schema({
     ref: 'Agent',
     required: false,
   },
-  extraTasks: [extraTaskSchema], // Include extra tasks in the booking
+  extraTasks: [{
+    description:{
+      type:String
+    }, 
+    extraPrice:{
+      type:String
+    } 
+  }], // Include extra tasks in the booking
   location: { // Include location of the service (if applicable)
     type: pointSchema,
     index: '2dsphere',
