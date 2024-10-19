@@ -9,6 +9,13 @@ import { verifyJWT } from '@org/utils';
 
 const router = Router();
 
+router.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Welcome to Auth API',
+  });
+}
+);
+
 router.post('/register', register);
 router.post('/login', login);
 router.get('/logout', logout);
