@@ -46,7 +46,7 @@ const bookingSchema = new mongoose.Schema({
   },
   totalPrice: {
     type: Number,
-    required: true,
+    // required: true,
     min: 0,
   },
   paymentStatus: {
@@ -71,12 +71,6 @@ const bookingSchema = new mongoose.Schema({
     type: pointSchema,
     index: '2dsphere',
   },
-  serviceItems: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'ServiceItem',
-    },
-  ],
 }, { timestamps: true });
 
 // Export the Booking model

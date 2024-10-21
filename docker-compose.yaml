@@ -8,24 +8,24 @@ services:
     ports:
       - "80:80"
     depends_on:
-      # - agent
+      - agent
       - auth
-      # - customer
-      # - shopkeeper
+      - customer
+      - shopkeeper
      
 
-  # agent:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: agent
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5000:5000"
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: agent
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5000:5000"
   auth:
     build:
       context: .
@@ -39,28 +39,28 @@ services:
     ports:
       - "5001:5001"
 
-  # customer:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: customer
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5002:5002"
-  # shopkeeper:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: shopkeeper
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5003:5003"
+  customer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: customer
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5002:5002"
+  shopkeeper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: shopkeeper
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5003:5003"
 
