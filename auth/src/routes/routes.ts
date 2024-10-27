@@ -26,6 +26,7 @@ router.post(
   agentRegister
 );
 router.get('/logout', logout);
-router.get('/userDetail', verifyJWT, getUserDetails);
+router.get('/user-detail', verifyJWT, getUserDetails);
+
 
 export default router;

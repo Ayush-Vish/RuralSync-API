@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 // Define the schema for an extra task
 
 // Define a point schema for location data
-const pointSchema = new mongoose.Schema({
+export const pointSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: ['Point'],

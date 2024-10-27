@@ -12,39 +12,98 @@ import { isAuthorized, verifyJWT } from '@org/utils';
 
 const router = express.Router();
 
+/**
+ * @route GET /
+ * @description Welcome message
+ */
 router.get('/', (req, res) => {
   return res.status(200).json({
     message: 'Welcome to Shopkeeper API',
   });
 });
 
-// router.route("/:id")
-//       .get(getServiceProviderById);
 
+
+/**
+ * @route GET /org-detail
+ * @description Get organization details for the service provider
+ * @access Private
+ */
 router.get(
   '/org-detail',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
   getOrgDetails
 );
+
+/**
+ * @route POST /register-org
+ * @description Register a new organization
+ * @access Private
+ * @payload { 
+ *  orgName: string, 
+ *  address: string, 
+ *  phone: string, 
+ *  description?: string, 
+ *  website?: string, 
+ *  logo?: string, 
+ *  location: { type: string, coordinates: [number, number] }, 
+ *  socialMedia?: object, 
+ *  businessHours?: object, 
+ *  isVerified?: boolean 
+ * }
+ */
 router.post(
-  '/registerOrg',
+  '/register-org',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
   registerOrg
 );
+
+/**
+ * @route POST /add-new-service
+ * @description Add a new service for the organization
+ * @access Private
+ * @payload { 
+ *  name: string, 
+ *  description: string, 
+ *  basePrice: number, 
+ *  category: string, 
+ *  availability: boolean, 
+ *  estimatedDuration: string, 
+ *  location: { longitude: number, latitude: number }, 
+ *  address: string, 
+ *  tags?: string[] 
+ * }
+ */
 router.post(
   '/add-new-service',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
   addNewService
 );
+
+/**
+ * @route POST /assign-agent
+ * @description Assign an agent to a service
+ * @access Private
+ * @payload { 
+ *  agentId: string, 
+ *  serviceId: string 
+ * }
+ */
 router.post(
   '/assign-agent',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
   assignAgent
 );
+
+/**
+ * @route GET /check-availability
+ * @description Check availability of agents for the organization
+ * @access Private
+ */
 router.get(
   '/check-availability',
   verifyJWT,
@@ -52,17 +111,38 @@ router.get(
   availableAgents
 );
 
+/**
+ * @route POST /assign-booking
+ * @description Assign an agent to a booking
+ * @access Private
+ * @payload { 
+ *  agentId: string, 
+ *  bookingId: string 
+ * }
+ */
 router.post(
   '/assign-booking',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
   assignAgentForaBooking
 );
+
+/**
+ * @route GET /search
+ * @description Search for services
+ * @access Public
+ * @query { 
+ *  searchString?: string, 
+ *  latitude?: string, 
+ *  longitude?: string, 
+ *  page?: number, 
+ *  limit?: number 
+ * }
+ */
 router.get('/search', searchServices);
 
 /**
- * TODO: Add a route to verify a Organization using legal documents using ml model
- *
+ * TODO: Add a route to verify an Organization using legal documents with a machine learning model
  */
 
 export default router;

@@ -48,15 +48,17 @@ export class ApiError extends Error {
 type CookieOptions =  {
   maxAge: number;
   httpOnly: boolean;
-  secure: boolean;
+  secure?: boolean;
   sameSite: "none";
+  path:string;
 
 }
 export const cookieOptions : CookieOptions = {
-  maxAge: 30 * 24 * 60 * 60 * 100,
+  maxAge: 5 * 24 * 60 * 60 * 100,
   httpOnly: true,
-  secure: false,
+  secure: true,
   sameSite: "none",
+  path:"/"
 };
 
 

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
+import { pointSchema } from './booking.model';
 
 const { Schema } = mongoose;
 
@@ -12,25 +13,29 @@ const serviceProviderSchema = new Schema({
   address: { type: String },
   ip: { type: String },
   serviceCompany: {
-    type: Schema.Types.ObjectId, // Refers to a ServiceCompany model
+    type: Schema.Types.ObjectId,
     ref: 'Org',
-    required: false, // Will be added after authentication
+    required: false,
   },
   isVerified: {
     type: Boolean,
     default: false,
   },
+  location: {
+    type: pointSchema,
+    index: '2dsphere',
+  },
   clients: [{ type: Schema.Types.ObjectId, ref: 'Client' }],
   agents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
-  booking:[{type:Schema.Types.ObjectId,ref:'Booking'}],
+  booking: [{ type: Schema.Types.ObjectId, ref: 'Booking' }],
   serviceItems: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ServiceItem',
     },
-  ], 
+  ],
   services: [{ type: String }],
-  refreshToken: { type: String }, // For token refresh
+  refreshToken: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -56,6 +61,9 @@ serviceProviderSchema.method('signToken', function () {
   );
 });
 
-const ServiceProvider = mongoose.model('ServiceProvider', serviceProviderSchema);
+const ServiceProvider = mongoose.model(
+  'ServiceProvider',
+  serviceProviderSchema
+);
 
 export { ServiceProvider };

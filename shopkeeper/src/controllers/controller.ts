@@ -35,45 +35,65 @@ const updateServiceProvider = async (
     return next(new ApiError('An error occurred', 500));
   }
 };
-
 const registerOrg = async (
   req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { orgName, address, phone } = req.body;
-
+    const {
+      orgName,
+      address,
+      phone,
+      description,
+      website,
+      logo,
+      location,
+      socialMedia,
+      businessHours,
+      isVerified = false,
+    } = req.body;
+    console.log(req.body);
+    // Validate required fields
     if (!orgName || !address || !phone) {
-      return next(new ApiError('All fields are required', 400));
+      return next(new ApiError('Organization name, address, and phone are required', 400));
     }
 
-    console.log(req.user.id);
-
+    // Find service provider
     const serviceProvider = await ServiceProvider.findById(req.user.id);
     if (!serviceProvider) {
       return next(new ApiError('Service Provider not found', 404));
     }
 
+    // Check if organization already exists for this provider
     const existingOrg = await Org.findOne({ ownerId: req.user.id });
     if (existingOrg) {
-      return next(
-        new ApiError('Owner can only register one organization', 400)
-      );
+      return next(new ApiError('Owner can only register one organization', 400));
     }
 
-    const newOrg = await Org.create({
+    // Create new organization
+    const newOrg = new Org({
       name: orgName,
       address,
       phone,
+      description,
+      website,
+      logo,
+      location, // Assuming `location` is passed as `{ type: "Point", coordinates: [longitude, latitude] }`
+      socialMedia,
+      businessHours,
+      isVerified,
       ownerId: req.user.id,
     });
+
+    // Save organization to the database
+    await newOrg.save();
 
     return res
       .status(201)
       .json({ message: 'Organization created successfully', data: newOrg });
   } catch (error) {
-    return next(new ApiError('An error occurred: ' + error.message, 500));
+    return next(new ApiError(`An error occurred: ${error.message}`, 500));
   }
 };
 
@@ -262,17 +282,55 @@ interface ServiceDocument {
 }
 
 
-const searchServices = async (req :Request, res: Response, next: NextFunction) =>  {
+const searchServices = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('Search Services');
-    const { searchString, latitude, longitude, page, limit } = req.query as SearchQuery;
+    console.log("Search Services");
+    const { searchString, latitude, longitude, page = 1, limit = 10 } = req.query as unknown as SearchQuery;
 
-    
+    const query: any = {};
+    const aggregationPipeline = [];
+    if (latitude && longitude) {
+      aggregationPipeline.push({
+        $geoNear: {
+          near: { type: "Point", coordinates: [longitude, latitude] },
+          distanceField: "distance",
+          spherical: true,
+          maxDistance: 50000, // 10 km range (adjustable)
+        }
+      });
+    }
+
+    // Text-based search
+    if (searchString) {
+      query.$text = { $search: searchString };
+      aggregationPipeline.push({
+        $match: query
+      });
+      aggregationPipeline.push({
+        $sort: { score: { $meta: "textScore" } }
+      });
+    } else {
+      aggregationPipeline.push({ $match: query });
+    }
+
+    // Pagination
+    const skip = (page - 1) * limit;
+    aggregationPipeline.push({ $skip: skip }, { $limit: limit });
+
+    // Execute aggregation
+    const services = await Service.aggregate(aggregationPipeline);
+
+    return res.status(200).json({
+      message: "Services retrieved successfully",
+      data: services,
+      page,
+      limit,
+      total: services.length,
+    });
   } catch (error) {
-    return next(new ApiError('An error occurred: ' + error.message, 500));  
+    return next(new ApiError("An error occurred: " + error.message, 500));
   }
-}
-
+};
 
 export {
   getServiceProviderById,

@@ -1,6 +1,7 @@
 import { hash } from "bcrypt";
 import { sign } from "jsonwebtoken";
 import mongoose from "mongoose";
+import { pointSchema } from "./booking.model";
 
 const { Schema } = mongoose;
 
@@ -19,6 +20,10 @@ const clientSchema = new Schema({
   profile: {
     bio: { type: String },
     profilePicture: { type: String }
+  },
+  location: {
+    type: pointSchema,
+    index: '2dsphere'
   },
   bookings: {  type: mongoose.Schema.Types.ObjectId,  ref: 'Booking' },
 
