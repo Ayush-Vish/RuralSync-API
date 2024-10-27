@@ -1,6 +1,7 @@
-import { Agent, Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
+import { Agent, Booking, Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
 import { NextFunction, Request, Response } from 'express';
-import { ApiError } from '@org/utils';
+import { ApiError, ApiResponse } from '@org/utils';
+import { AppRunner } from 'aws-sdk';
 
 const getServiceProviderById = async (req: Request, res: Response) => {
   try {
@@ -158,32 +159,63 @@ const addNewService = async (
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
-
-const assignAgent = async (
-  req: RequestWithUser,
-  res: Response,
-  next: NextFunction
-) => {
+const assignAgent = async (req, res, next) => {
   try {
     const { agentId, serviceId } = req.body;
     if (!agentId || !serviceId) {
       return next(new ApiError('Agent Id and Service Id are required', 400));
     }
+
     const service = await Service.findById(serviceId);
     if (!service) {
       return next(new ApiError('Service not found', 404));
     }
+
+    // Check if the agent exists
     const agent = await Agent.findById(agentId);
     if (!agent) {
       return next(new ApiError('Agent not found', 404));
     }
-    await service.assignedAgents.push(agentId);
-    await service.save();
+
+    // Add agent to assignedAgents if not already present
+    if (!service.assignedAgents.includes(agentId)) {
+      service.assignedAgents.push(agentId);
+      await service.save();
+    }
+
     return res.status(200).json({ message: 'Agent assigned successfully' });
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
+
+
+export const assignAgentForaBooking =async  (req :Request , res : Response,  next : NextFunction ) => {
+  try {
+    const {
+      agentId , bookingId 
+    } = req.body ;
+    const agent = await Agent.findById(agentId);
+    if(!agent) {
+      return next(new ApiError("Agent not Found ", 400 ) ) ;
+    }
+    const booking = await Booking.findById(bookingId);
+    if(!booking) {
+      return next(new ApiError("Booking not Found " , 400 )) ;
+    }
+    booking.agent = agentId;
+    return new ApiResponse(res , 201 , "Booking Created" , {
+      agentName : agent.name ,
+      agentPhone : agent.phoneNumber,
+      bookingId , 
+      agentId
+    })
+
+
+  } catch (error) {
+    return next(new ApiError(error.message  , 400))
+  }
+}
 
 const availableAgents = async (
   req: RequestWithUser,
@@ -233,13 +265,6 @@ const searchServices = async (req :Request, res: Response, next: NextFunction) =
   try {
     console.log('Search Services');
     const { searchString, latitude, longitude, page, limit } = req.query as SearchQuery;
-    const services = await Service.find({});
-
-    if (!services) {
-      return next(new ApiError('No services found', 404));
-    } 
-    
-
 
     
   } catch (error) {

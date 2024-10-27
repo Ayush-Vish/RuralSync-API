@@ -225,8 +225,7 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
       'AGENT',
       agent.id
     );
-
-    // Remove sensitive data before sending response
+    
     const agentResponse = agent.toObject();
     delete agentResponse.password;
 

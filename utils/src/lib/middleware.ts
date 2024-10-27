@@ -1,7 +1,7 @@
 import { Agent, Client, RequestWithUser, ServiceProvider } from '@org/db';
 import { ApiError } from './utils';
 import { verify } from 'jsonwebtoken';
-import { NextFunction, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 
 export const verifyJWT = async (
@@ -98,3 +98,19 @@ const upload = multer({
 export {
   upload
 };
+
+
+export const loactionMiddleware = async (req :RequestWithUser , res : Response , next : NextFunction) => {
+  try {
+      const res = await fetch(`https://ipapi.co/${req.ip}/json/`);
+      const data = await res.json();
+      
+      // req.user.location = data;
+      console.log(data);
+
+      next();
+
+  } catch (error) {
+    return next(new ApiError(error.message , 400 ) );
+  }
+}

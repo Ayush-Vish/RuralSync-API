@@ -9,7 +9,7 @@ const sessionSchema = new Schema({
       loginTime: { type: Date, default: Date.now },
       logoutTime: { type: Date },
       active: { type: Boolean, default: true },
-    });
+});
     
 export const Session = mongoose.model('Session', sessionSchema);
 export type Role = 'CLIENT' | 'AGENT' | 'SERVICE_PROVIDER';
@@ -19,6 +19,7 @@ export type User = {
   email: string;
   name: string;
   ip : string;
+  location?:any
   
 };
 export interface RequestWithUser extends Request  {
