@@ -1,12 +1,9 @@
+import { hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import mongoose from 'mongoose'
 // Define the schema for the Agent
 const agentSchema = new mongoose.Schema({
-  agentId: {
-    type: String,
-    // required: true,
-    unique: true
-  },
+
   name: {
     type: String,
     required: true
@@ -20,42 +17,34 @@ const agentSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     // required: true
+    // required: true
   },
   address: {
     type: String,
-    // required: true
   },
   location: {
     latitude: {
       type: Number,
-      // required: true
     },
     longitude: {
       type: Number,
-      // required: true
     }
   },
   services: {
     type: [String], // Array of services like coolerRepair, washingMachineRepair
-    // required: true
   },
   serviceArea: {
     type: String,
-    // required: true
   },
   availability: {
     type: String,
-    // required: true
   },
   serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider',
     // required: true
   },
-  customerId: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Customer'
-  }],
+
   rating: {
     type: Number,
     default: 0
@@ -87,13 +76,21 @@ agentSchema.pre('save', function(next) {
     next();
   });
   // Method to sign JWT token
+  agentSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+      return next();
+    }
+    this.password = await hash(this.password, 10);
+    return next();
+  });
+  
 agentSchema.method('signToken', function () {
   return sign(
     {
       id: this._id,
       email: this.email,
       name: this.name,
-      role: 'CLIENT',
+      role: 'AGENT',
     },
     'SOME_SECRET'
   );

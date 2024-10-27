@@ -2,6 +2,7 @@ import express from 'express';
 import {
   addNewService,
   assignAgent,
+  assignAgentForaBooking,
   availableAgents,
   getOrgDetails,
   registerOrg,
@@ -47,13 +48,17 @@ router.post(
 router.get(
   '/check-availability',
   verifyJWT,
-  isAuthorized(['SERVICE_PROVIDER']), 
+  isAuthorized(['SERVICE_PROVIDER']),
   availableAgents
 );
 
+router.post(
+  '/assign-booking',
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  assignAgentForaBooking
+);
 router.get('/search', searchServices);
-
-
 
 /**
  * TODO: Add a route to verify a Organization using legal documents using ml model
