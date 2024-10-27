@@ -52,15 +52,15 @@ services:
   #   ports:
   #     - "5002:5002"
   # shopkeeper:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: shopkeeper
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5003:5003"
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     PROJECT: shopkeeper
+    # env_file:
+    #   - .env
+    # environment:
+    #   - NODE_ENV=production
+    # ports:
+    #   - "5003:5003"
 

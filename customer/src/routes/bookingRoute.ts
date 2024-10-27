@@ -1,7 +1,7 @@
 import express from 'express';
 import {
   createBooking,
-  getBookings,
+  getCustomerBookings,
   deleteBooking,
   getServices,
 } from '../controllers/booking';
@@ -16,9 +16,9 @@ router.post('/book', verifyJWT, isAuthorized(['CLIENT']), createBooking);
 router.get('/services/:orgId', verifyJWT, getServices);
 
 // Route to get all bookings for a customer
-router.get('/bookings', verifyJWT, getBookings);
+router.get('/bookings', verifyJWT,isAuthorized(['CLIENT']),getCustomerBookings);
 
 // Route to delete a booking
-router.delete('/bookings/:id', verifyJWT, deleteBooking);
+router.delete('/bookings/:id', verifyJWT,isAuthorized(['CLIENT']),deleteBooking);
 
 export default router;

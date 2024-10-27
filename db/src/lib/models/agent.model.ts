@@ -16,7 +16,8 @@ const agentSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phoneNumber: {
     type: String,
-    required: true
+    // required: true
+    // required: true
   },
   address: {
     type: String,
@@ -41,7 +42,7 @@ const agentSchema = new mongoose.Schema({
   serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider',
-    required: true
+    // required: true
   },
 
   rating: {

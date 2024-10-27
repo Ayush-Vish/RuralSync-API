@@ -1,16 +1,18 @@
 import { Booking, RequestWithUser, Service } from '@org/db';
 import { ApiError } from '@org/utils';
-import { NextFunction, Request, Response } from 'express';
-import mongoose, { Mongoose } from 'mongoose';
+import { RequestId } from 'aws-sdk/clients/cloudwatchlogs';
+import { NextFunction, Request, RequestParamHandler, Response } from 'express';
+import moment from 'moment';
+import mongoose from 'mongoose';
 
-// Utility function for date validation
-const isValidDate = (date) => {
-  return !isNaN(Date.parse(date));
-};
+/// Utility function for date validation
+// const isValidDate = (date: string) => {
+//   return !isNaN(Date.parse(date));
+// };
+
 type ExtraTask = {
   description: string;
   extraPrice: number;
-  timeAdded?: string;
 };
 
 type Location = {
@@ -21,42 +23,34 @@ type Location = {
 type NewBookingData = {
   customer: mongoose.Types.ObjectId;
   service: mongoose.Types.ObjectId;
-  serviceProvider: mongoose.Types.ObjectId;
   bookingDate: Date;
-  totalPrice: number;
-  serviceItems?: ExtraTask[];
+  bookingTime: string;
+  extraTasks?: ExtraTask[];
   location?: Location;
 };
 
 export const createBooking = async (req: RequestWithUser, res: Response): Promise<void> => {
   try {
-    const customerId = req.user.id   // Assuming customer ID is extracted from the authenticated user
+    const customerId = req.user.id; // Assuming customer ID is extracted from the authenticated user
     const {
       serviceId,
       bookingDate,
       bookingTime,
       extraTasks,
       location,
-      totalPrice,
-      serviceProviderId,
     }: {
       serviceId: string;
       bookingDate: string;
       bookingTime: string;
       extraTasks?: ExtraTask[];
       location?: Location;
-      totalPrice: number;
-      serviceProviderId: string;
     } = req.body;
 
     // Validate required fields
-    if (!serviceId || !bookingDate || !bookingTime  ) {
+    if (!serviceId || !bookingDate || !bookingTime) {
       res.status(400).json({ message: 'All fields are required' });
       return;
     }
-
-    // Validate total price
-    
 
     // Validate booking time (e.g., "10:00 AM", "2:30 PM")
     const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
@@ -87,28 +81,26 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
       return;
     }
 
-    // Combine bookingDate and bookingTime into a proper Date object
-    const fullBookingDate = new Date(`${bookingDate}T${bookingTime}`);
-    if (isNaN(fullBookingDate.getTime())) {
-      res.status(400).json({ message: 'Invalid booking date or time format' });
+    // Validate and format the date using moment.js
+    const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format('YYYY-MM-DD');
+    if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
+      res.status(400).json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
       return;
     }
 
     // Build the booking object
     const newBookingData: NewBookingData = {
       customer: customerId as any,
-      service: new mongoose.Types.ObjectId(serviceId),
-      serviceProvider: new mongoose.Types.ObjectId(serviceProviderId),
-      bookingDate: fullBookingDate,
-      totalPrice,
+      service: serviceId as any,
+      bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
+      bookingTime: bookingTime, // Save time as string
     };
 
     // If extra tasks are provided, add them to the booking
     if (extraTasks && extraTasks.length > 0) {
-      newBookingData.serviceItems = extraTasks.map((task) => ({
+      newBookingData.extraTasks = extraTasks.map((task) => ({
         description: task.description,
         extraPrice: task.extraPrice,
-        timeAdded: task.timeAdded || null,
       }));
     }
 
@@ -128,46 +120,61 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
 };
 
 // Get Customer Bookings
-export const getBookings = async (req, res) => {
+export const getCustomerBookings = async (req: RequestWithUser, res: Response): Promise<void> => {
   try {
-    const customerId = req.user.id; // Extract from the auth token
+    const customerId = req.user.id; // Assuming customer ID is extracted from authenticated user
 
-    const bookings = await Booking.find({ customer: customerId });
-
-    if (bookings.length === 0) {
-      return res.status(404).json({ message: 'No bookings found' });
+    // Validate that the customerId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      res.status(400).json({ message: 'Invalid customer ID' });
+      return;
     }
 
-    res.status(200).json(bookings);
+    // Fetch all bookings associated with the customer
+    const customerBookings = await Booking.find({ customer: customerId })
+      .sort({ bookingDate: -1 }); // Sort bookings by most recent first
+
+    // Check if bookings are found
+    if (customerBookings.length === 0) {
+      res.status(404).json({ message: 'No bookings found for this customer' });
+      return;
+    }
+
+    // Return the bookings
+    res.status(200).json(customerBookings);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
-
 // Delete a Booking
-export const deleteBooking = async (req, res) => {
+export const deleteBooking = async (req: Request, res: Response): Promise<void> => {
   try {
-    const customerId = req.user.id;
-    const bookingId = req.params.id;
+    // Get the booking ID from the request parameters
+    console.log("adihsjdfbhjfbdjhfbg",req.params);
+    const { id } = req.params;
 
-    // Validation
-    if (!bookingId.match(/^[0-9a-fA-F]{24}$/)) {
-      // Check if bookingId is a valid ObjectId format
-      return res.status(400).json({ message: 'Invalid booking ID format' });
+    console.log("adillllllll",id);
+    // Check if the booking ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: 'Invalid booking ID format' });
+      return;
     }
 
-    const booking = await Booking.findById(bookingId);
+    // Find and delete the booking
+    const deletedBooking = await Booking.findByIdAndDelete(id);
 
-    if (!booking || booking.customer.toString() !== customerId) {
-      return res
-        .status(404)
-        .json({ message: 'Booking not found or not authorized' });
+    // If no booking was found, return a 404 error
+    if (!deletedBooking) {
+      res.status(404).json({ message: 'Booking not found' });
+      return;
     }
 
-    await Booking.findByIdAndDelete(bookingId);
+    // Return a success message
     res.status(200).json({ message: 'Booking deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
