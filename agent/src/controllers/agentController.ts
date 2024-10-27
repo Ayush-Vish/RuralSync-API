@@ -15,10 +15,9 @@ export const getAgentDashboard = async (req, res) => {
     console.log("AAAAAAAAAAAAA",agentId);
     // Find all bookings assigned to this agent
     const bookings = await Booking.find({ agent: agentId })
-      .populate('customer', 'name') // Populate customer name for each booking
-      .populate('serviceProvider', 'name'); // Populate service provider name
-
-    // Filter bookings based on status
+      // .populate('customer', 'name') // Populate customer name for each booking
+      // .populate('serviceProvider', 'name'); // Populate service provider name
+      // Filter bookings based on status
     const pendingBookings = bookings.filter(b => b.status === 'Pending');
     const inProgressBookings = bookings.filter(b => b.status === 'In Progress');
     const completedBookings = bookings.filter(b => b.status === 'Completed');
@@ -153,5 +152,93 @@ export const getExtraTasksForBooking = async (req, res) => {
     res.status(200).json({ extraTasks: booking.extraTasks });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch extra tasks' });
+  }
+};
+
+
+
+
+
+export const updateBookingToInProgress = async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    const agentId = req.user.id;
+
+    // Find the booking and ensure it belongs to the agent
+    const booking = await Booking.findOne({ 
+      _id: bookingId,
+      agent: agentId 
+    });
+
+    if (!booking) {
+      return res.status(404).json({ 
+        error: 'Booking not found or not assigned to this agent' 
+      });
+    }
+
+    // Validate current status
+    if (booking.status !== 'Pending') {
+      return res.status(400).json({ 
+        error: 'Booking must be in Pending status to move to In Progress' 
+      });
+    }
+
+    // Update the status
+    booking.status = 'In Progress';
+    // booking.startTime = new Date(); // Optional: track when work started
+    await booking.save();
+
+    res.status(200).json({
+      message: 'Booking status updated to In Progress',
+      booking
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to update booking status',
+      message: error.message 
+    });
+  }
+};
+
+export const updateBookingToCompleted = async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    const agentId = req.user.id;
+
+    // Find the booking and ensure it belongs to the agent
+    const booking = await Booking.findOne({ 
+      _id: bookingId,
+      agent: agentId 
+    });
+
+    if (!booking) {
+      return res.status(404).json({ 
+        error: 'Booking not found or not assigned to this agent' 
+      });
+    }
+
+    // Validate current status
+    if (booking.status !== 'In Progress') {
+      return res.status(400).json({ 
+        error: 'Booking must be in In Progress status to move to Completed' 
+      });
+    }
+
+    // Update the status
+    booking.status = 'Completed';
+    // booking.completionTime = new Date(); // Optional: track when work was completed
+    await booking.save();
+
+    res.status(200).json({
+      message: 'Booking status updated to Completed',
+      booking
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Failed to update booking status',
+      message: error.message 
+    });
   }
 };
