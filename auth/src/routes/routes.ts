@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import {
+  agentRegister,
   getUserDetails,
   login,
   logout,
   register,
 } from '../controllers/auth.controller';
-import { verifyJWT } from '@org/utils';
+import { isAuthorized, verifyJWT } from '@org/utils';
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.get('/', (req, res) => {
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/agent-register' , verifyJWT , isAuthorized(["SERVICE_PROVIDER"])  , agentRegister);
 router.get('/logout', logout);
 router.get('/userDetail', verifyJWT, getUserDetails);
 

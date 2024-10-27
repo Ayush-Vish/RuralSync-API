@@ -233,7 +233,13 @@ const searchServices = async (req :Request, res: Response, next: NextFunction) =
   try {
     console.log('Search Services');
     const { searchString, latitude, longitude, page, limit } = req.query as SearchQuery;
-    const services = await Service.find() ;
+    const services = await Service.find({});
+
+    if (!services) {
+      return next(new ApiError('No services found', 404));
+    } 
+    
+
 
     
   } catch (error) {

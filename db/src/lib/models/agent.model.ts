@@ -2,11 +2,7 @@ import { sign } from 'jsonwebtoken';
 import mongoose from 'mongoose'
 // Define the schema for the Agent
 const agentSchema = new mongoose.Schema({
-  agentId: {
-    type: String,
-    // required: true,
-    unique: true
-  },
+
   name: {
     type: String,
     required: true
@@ -23,39 +19,30 @@ const agentSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    required: true
   },
   location: {
     latitude: {
       type: Number,
-      required: true
     },
     longitude: {
       type: Number,
-      required: true
     }
   },
   services: {
     type: [String], // Array of services like coolerRepair, washingMachineRepair
-    required: true
   },
   serviceArea: {
     type: String,
-    required: true
   },
   availability: {
     type: String,
-    required: true
   },
   serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider',
     required: true
   },
-  customerId: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Customer'
-  }],
+
   rating: {
     type: Number,
     default: 0
@@ -93,7 +80,7 @@ agentSchema.method('signToken', function () {
       id: this._id,
       email: this.email,
       name: this.name,
-      role: 'CLIENT',
+      role: 'AGENT',
     },
     'SOME_SECRET'
   );

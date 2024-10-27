@@ -77,31 +77,30 @@ const clientRegister = async (
   }
 };
 
-const agentRegister = async (
-  req: Request,
+export const agentRegister = async (
+  req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) => {
   try {
+
     const { email, password, name } = req.body;
     if (!email || !password || !name) {
       return next(new ApiError('Email, password, and name are required', 400));
+    }
+    console.log(req.user)
+    const serviceProviderId = req.user.id;
+    if(!serviceProviderId) {
+      return next(new ApiError("Agent can be registered by SERVICE_PROVIDER" , 400));
+      
     }
     const agentExists = await Agent.findOne({ email });
     if (agentExists) {
       return next(new ApiError('Agent already exists', 400));
     }
-    const newAgent = await Agent.create(req.body);
-    const token = sign(
-      {
-        id: newAgent._id,
-        email: newAgent.email,
-        name: newAgent.name,
-        role: 'AGENT',
-      },
-      'SOME_SECRET'
-    );
-    res.cookie('token', token, cookieOptions);
+
+    const newAgent = await Agent.create({...req.body, serviceProviderId});
+   
     return res.status(201).json({
       message: 'Agent created successfully',
       data: newAgent,
@@ -122,8 +121,6 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     switch (role) {
       case 'SERVICE_PROVIDER':
         return await registerServiceProvider(req, res, next);
-      case 'AGENT':
-        return await agentRegister(req, res, next);
       case 'CLIENT':
         return await clientRegister(req, res, next);
       default:
