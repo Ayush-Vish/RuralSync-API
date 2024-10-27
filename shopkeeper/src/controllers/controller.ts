@@ -204,7 +204,7 @@ export const assignAgentForaBooking =async  (req :Request , res : Response,  nex
       return next(new ApiError("Booking not Found " , 400 )) ;
     }
     booking.agent = agentId;
-    return new ApiResponse(res , 201 , "Booking Created" , {
+    return new ApiResponse(res , 201 , "Booking Assigned" , {
       agentName : agent.name ,
       agentPhone : agent.phoneNumber,
       bookingId , 

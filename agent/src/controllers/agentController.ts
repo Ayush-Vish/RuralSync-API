@@ -12,6 +12,7 @@ export const getAgentDashboard = async (req, res) => {
   try {
     const agentId = req.user.id;
 
+    console.log("AAAAAAAAAAAAA",agentId);
     // Find all bookings assigned to this agent
     const bookings = await Booking.find({ agent: agentId })
       .populate('customer', 'name') // Populate customer name for each booking
