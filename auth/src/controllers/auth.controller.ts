@@ -172,36 +172,93 @@ const loginServiceProvider = async (
 const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
+
+    // Debug log incoming request
+    console.log('Login attempt:', { 
+      email, 
+      passwordProvided: !!password,
+      passwordLength: password?.length 
+    });
+
+    // Input validation
     if (!email || !password) {
       return next(new ApiError('Email and password are required', 400));
     }
-    const agent = await Agent.findOne({ email });
+
+    // Find agent with password explicitly selected
+    const agent = await Agent.findOne({ email }).select('+password');
+
+    // Debug log agent lookup
+    console.log('Agent lookup result:', {
+      found: !!agent,
+      hasPassword: !!agent?.password,
+      passwordHashLength: agent?.password?.length
+    });
+
     if (!agent) {
-      return next(new ApiError('Invalid credentials', 400));
+      return next(new ApiError('Invalid credentials', 401));
     }
+
+    if (!agent.password) {
+      console.log('Agent has no password hash stored');
+      return next(new ApiError('Agent account not properly configured', 500));
+    }
+
+    // Debug password comparison
+    console.log('Starting password comparison:', {
+      providedPassword: password,
+      storedHash: agent.password
+    });
 
     // Validate password
     const isMatch = await bcrypt.compare(password, agent.password);
+
+    // Debug log password match result
+    console.log('Password match result:', isMatch);
+
     if (!isMatch) {
-      return next(new ApiError('Invalid credentials', 400));
+      return next(new ApiError('Invalid credentials', 401));
     }
 
+    // Generate tokens
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
       'AGENT',
       agent.id
     );
-    res.cookie('accessToken', accessToken, cookieOptions);
-    res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    return res.status(200).json({
-      message: 'Login successful',
-      data: agent,
-    });
+    // Remove sensitive data before sending response
+    const agentResponse = agent.toObject();
+    delete agentResponse.password;
+
+    // Set cookies and send response
+    return res
+      .cookie('accessToken', accessToken, cookieOptions)
+      .cookie('refreshToken', refreshToken, cookieOptions)
+      .status(200)
+      .json({
+        success: true,
+        message: 'Login successful',
+        data: agentResponse,
+      });
+
   } catch (error) {
-    return next(new ApiError('An error occurred', 500));
+    // Detailed error logging
+    console.error('Login error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+
+    if (error.name === 'BcryptError') {
+      return next(new ApiError('Password comparison failed', 500));
+    }
+
+    return next(new ApiError(
+      'An error occurred during login', 
+      error.status || 500
+    ));
   }
 };
-
 const loginClient = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;

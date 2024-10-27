@@ -1,3 +1,4 @@
+import { hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import mongoose from 'mongoose'
 // Define the schema for the Agent
@@ -74,6 +75,14 @@ agentSchema.pre('save', function(next) {
     next();
   });
   // Method to sign JWT token
+  agentSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+      return next();
+    }
+    this.password = await hash(this.password, 10);
+    return next();
+  });
+  
 agentSchema.method('signToken', function () {
   return sign(
     {
