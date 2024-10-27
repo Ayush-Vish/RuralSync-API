@@ -19,38 +19,38 @@ const agentSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phoneNumber: {
     type: String,
-    required: true
+    // required: true
   },
   address: {
     type: String,
-    required: true
+    // required: true
   },
   location: {
     latitude: {
       type: Number,
-      required: true
+      // required: true
     },
     longitude: {
       type: Number,
-      required: true
+      // required: true
     }
   },
   services: {
     type: [String], // Array of services like coolerRepair, washingMachineRepair
-    required: true
+    // required: true
   },
   serviceArea: {
     type: String,
-    required: true
+    // required: true
   },
   availability: {
     type: String,
-    required: true
+    // required: true
   },
   serviceProviderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider',
-    required: true
+    // required: true
   },
   customerId: [{
     type: mongoose.Schema.Types.ObjectId,

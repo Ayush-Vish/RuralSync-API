@@ -91,6 +91,7 @@ const agentRegister = async (
     if (agentExists) {
       return next(new ApiError('Agent already exists', 400));
     }
+    
     const newAgent = await Agent.create(req.body);
     const token = sign(
       {

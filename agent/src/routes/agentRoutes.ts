@@ -4,7 +4,7 @@ const router = express.Router();
 
 import {verifyJWT} from '@org/utils'
 import multer from 'multer'
-import {getAgentDashboard,updateServiceInBooking,deleteServiceFromBooking,getServicesForBooking,addServiceToBooking} from '../controllers/agentController'
+import {getAgentDashboard,updateExtraTaskInBooking,deleteExtraTaskFromBooking,getExtraTasksForBooking,addExtraTaskToBooking} from '../controllers/agentController'
 // Setup Multer for image uploads
 const upload = multer({ dest: 'uploads/' });
 
@@ -12,15 +12,15 @@ const upload = multer({ dest: 'uploads/' });
 router.get('/dashboard',verifyJWT,getAgentDashboard);
 
 // Add service to a booking (with image upload)
-router.post('/booking/:bookingId/service',verifyJWT, upload.single('image'),addServiceToBooking);
+router.post('/booking/:bookingId/service',verifyJWT, upload.single('image'),addExtraTaskToBooking);
 
 // Update a service in a booking
-router.put('/service/:serviceId',verifyJWT, updateServiceInBooking);
+router.put('/service/:serviceId',verifyJWT, updateExtraTaskInBooking);
 
 // Delete a service from a booking
-router.delete('/service/:serviceId',verifyJWT, deleteServiceFromBooking);
+router.delete('/service/:serviceId',verifyJWT, deleteExtraTaskFromBooking);
 
 // Get all services for a specific booking
-router.get('/booking/:bookingId/services',verifyJWT,getServicesForBooking);
+router.get('/booking/:bookingId/services',verifyJWT,getExtraTasksForBooking);
 
 export default router;
