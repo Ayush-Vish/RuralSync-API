@@ -4,6 +4,8 @@ import {
   assignAgent,
   assignAgentForaBooking,
   availableAgents,
+  deleteService,
+  getAllServices,
   getOrgDetails,
   registerOrg,
   searchServices,
@@ -22,8 +24,6 @@ router.get('/', (req, res) => {
   });
 });
 
-
-
 /**
  * @route GET /org-detail
  * @description Get organization details for the service provider
@@ -40,17 +40,17 @@ router.get(
  * @route POST /register-org
  * @description Register a new organization
  * @access Private
- * @payload { 
- *  orgName: string, 
- *  address: string, 
- *  phone: string, 
- *  description?: string, 
- *  website?: string, 
- *  logo?: string, 
- *  location: { type: string, coordinates: [number, number] }, 
- *  socialMedia?: object, 
- *  businessHours?: object, 
- *  isVerified?: boolean 
+ * @payload {
+ *  orgName: string,
+ *  address: string,
+ *  phone: string,
+ *  description?: string,
+ *  website?: string,
+ *  logo?: string,
+ *  location: { type: string, coordinates: [number, number] },
+ *  socialMedia?: object,
+ *  businessHours?: object,
+ *  isVerified?: boolean
  * }
  */
 router.post(
@@ -64,16 +64,16 @@ router.post(
  * @route POST /add-new-service
  * @description Add a new service for the organization
  * @access Private
- * @payload { 
- *  name: string, 
- *  description: string, 
- *  basePrice: number, 
- *  category: string, 
- *  availability: boolean, 
- *  estimatedDuration: string, 
- *  location: { longitude: number, latitude: number }, 
- *  address: string, 
- *  tags?: string[] 
+ * @payload {
+ *  name: string,
+ *  description: string,
+ *  basePrice: number,
+ *  category: string,
+ *  availability: boolean,
+ *  estimatedDuration: string,
+ *  location: { longitude: number, latitude: number },
+ *  address: string,
+ *  tags?: string[]
  * }
  */
 router.post(
@@ -87,9 +87,9 @@ router.post(
  * @route POST /assign-agent
  * @description Assign an agent to a service
  * @access Private
- * @payload { 
- *  agentId: string, 
- *  serviceId: string 
+ * @payload {
+ *  agentId: string,
+ *  serviceId: string
  * }
  */
 router.post(
@@ -115,9 +115,9 @@ router.get(
  * @route POST /assign-booking
  * @description Assign an agent to a booking
  * @access Private
- * @payload { 
- *  agentId: string, 
- *  bookingId: string 
+ * @payload {
+ *  agentId: string,
+ *  bookingId: string
  * }
  */
 router.post(
@@ -131,15 +131,36 @@ router.post(
  * @route GET /search
  * @description Search for services
  * @access Public
- * @query { 
- *  searchString?: string, 
- *  latitude?: string, 
- *  longitude?: string, 
- *  page?: number, 
- *  limit?: number 
+ * @query {
+ *  searchString?: string,
+ *  latitude?: string,
+ *  longitude?: string,
+ *  page?: number,
+ *  limit?: number
  * }
  */
 router.get('/search', searchServices);
+
+/**
+ * @route GET /services
+ * @description Get all services for the organization
+ * @access Private
+ *
+ */
+
+router.get(
+  '/services',
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  getAllServices
+);
+
+router.delete(
+  `/delete-service/:serviceId`,
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  deleteService
+);
 
 /**
  * TODO: Add a route to verify an Organization using legal documents with a machine learning model

@@ -1,21 +1,15 @@
 import mongoose, { Schema } from 'mongoose';
 import { pointSchema } from './booking.model';
+
 const orgSchema = new Schema({
-  ownerId: {
-    type: Schema.Types.ObjectId,
-    ref: 'ServiceProvider',
-    required: true,
-  },
+  ownerId: { type: Schema.Types.ObjectId, ref: 'ServiceProvider', required: true },
   name: { type: String, required: true },
   description: { type: String },
   address: { type: String },
   phone: { type: String },
   website: { type: String },
-  logo: { type: String }, 
-  location: {
-    type: pointSchema,
-    index: '2dsphere',
-  },
+  logo: { type: String },
+  location: { type: pointSchema, index: '2dsphere' },
   services: [{ type: Schema.Types.ObjectId, ref: 'Service', required: false }],
   agents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
   clients: [{ type: Schema.Types.ObjectId, ref: 'Client' }],

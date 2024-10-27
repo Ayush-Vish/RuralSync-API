@@ -1,7 +1,6 @@
 import { Agent, Booking, Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
 import { NextFunction, Request, Response } from 'express';
 import { ApiError, ApiResponse } from '@org/utils';
-import { AppRunner } from 'aws-sdk';
 
 const getServiceProviderById = async (req: Request, res: Response) => {
   try {
@@ -51,27 +50,23 @@ const registerOrg = async (
       location,
       socialMedia,
       businessHours,
-      isVerified = false,
+      isVerified = true,
     } = req.body;
-    console.log(req.body);
-    // Validate required fields
+
     if (!orgName || !address || !phone) {
       return next(new ApiError('Organization name, address, and phone are required', 400));
     }
 
-    // Find service provider
     const serviceProvider = await ServiceProvider.findById(req.user.id);
     if (!serviceProvider) {
       return next(new ApiError('Service Provider not found', 404));
     }
 
-    // Check if organization already exists for this provider
     const existingOrg = await Org.findOne({ ownerId: req.user.id });
     if (existingOrg) {
       return next(new ApiError('Owner can only register one organization', 400));
     }
 
-    // Create new organization
     const newOrg = new Org({
       name: orgName,
       address,
@@ -79,19 +74,16 @@ const registerOrg = async (
       description,
       website,
       logo,
-      location, // Assuming `location` is passed as `{ type: "Point", coordinates: [longitude, latitude] }`
+      location, 
       socialMedia,
       businessHours,
       isVerified,
       ownerId: req.user.id,
     });
 
-    // Save organization to the database
     await newOrg.save();
 
-    return res
-      .status(201)
-      .json({ message: 'Organization created successfully', data: newOrg });
+    return res.status(201).json({ message: 'Organization created successfully', data: newOrg });
   } catch (error) {
     return next(new ApiError(`An error occurred: ${error.message}`, 500));
   }
@@ -137,13 +129,19 @@ const addNewService = async (
     } = req.body;
 
     const ownerId = req.user.id;
-
-    if (!name || !description || !basePrice || !category || !availability || !location || !address) {
+    console.log(req.body)
+    if (!name || !description || !basePrice || !category || !availability || !location  ) {
       return next(new ApiError('All required fields must be provided', 400));
     }
-
+    
+    console.log(location.coordinates[0]);
+ 
     if (!ownerId) {
       return next(new ApiError('Owner Id not found', 400));
+    }
+    const owner = await ServiceProvider.findById(ownerId);
+    if (!owner) {
+      return next(new ApiError('Owner not found', 404));
     }
 
     const org = await Org.findOne({ ownerId: req.user.id });
@@ -160,9 +158,9 @@ const addNewService = async (
       estimatedDuration,
       location: {
         type: 'Point',
-        coordinates: [location.longitude, location.latitude]
+        coordinates: [location.coordinates[0], location.coordinates[1]]
       },
-      address,
+      address:owner.address,
       tags: tags || [],
       ownerId,
       serviceCompany: org._id,
@@ -190,7 +188,7 @@ const assignAgent = async (req, res, next) => {
     if (!service) {
       return next(new ApiError('Service not found', 404));
     }
-
+    
     // Check if the agent exists
     const agent = await Agent.findById(agentId);
     if (!agent) {
@@ -224,8 +222,7 @@ export const assignAgentForaBooking =async  (req :Request , res : Response,  nex
       return next(new ApiError("Booking not Found " , 400 )) ;
     }
     booking.agent = agentId;
-    await booking.save();
-    return new ApiResponse(res , 201 , "Booking Assigned" , {
+    return new ApiResponse(res , 201 , "Booking Created" , {
       agentName : agent.name ,
       agentPhone : agent.phoneNumber,
       bookingId , 
@@ -331,7 +328,32 @@ const searchServices = async (req: Request, res: Response, next: NextFunction) =
     return next(new ApiError("An error occurred: " + error.message, 500));
   }
 };
+const getAllServices = async (req: Request, res: Response, next: NextFunction) =>  {
+  try {
+    const services = await Service.find();
+    return res.status(200).json({
+      message: "Services retrieved successfully",
+      data: services,
+    });
+  } catch (error) {
+    return next(new ApiError("An error occurred: " + error.message, 500));
+  }
+}
 
+const deleteService = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    console.log(req.params)
+    const {serviceId} = req.params;
+  
+    const service = await Service.findByIdAndDelete(serviceId);
+    if (!service) {
+      return next(new ApiError("Service not found", 404));
+    }
+    return res.status(200).json({ message: "Service deleted successfully" });
+  } catch (error) {
+    return next(new ApiError("An error occurred: " + error.message, 500));
+  }
+}
 export {
   getServiceProviderById,
   registerOrg,
@@ -340,6 +362,8 @@ export {
   updateServiceProvider,
   assignAgent,
   availableAgents,
-  searchServices
+  searchServices,
+  getAllServices,
+  deleteService
 };
 
