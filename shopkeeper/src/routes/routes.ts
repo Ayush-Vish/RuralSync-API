@@ -9,6 +9,8 @@ import {
   getAgent,
   getAllAgents,
   getAllServices,
+  getBooking,
+  getBookings,
   getOrgDetails,
   registerOrg,
   searchServices,
@@ -165,10 +167,39 @@ router.delete(
   deleteService
 );
 
-router.get("/all-agents" , verifyJWT , isAuthorized(['SERVICE_PROVIDER']) , getAllAgents)
-router.delete("/agent/:agentId" , verifyJWT , isAuthorized(['SERVICE_PROVIDER']) , deleteAgent)
+router.get(
+  '/all-agents',
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  getAllAgents
+);
+router.delete(
+  '/agent/:agentId',
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  deleteAgent
+);
 
-router.get("/agent/:agentId" , verifyJWT , isAuthorized(['SERVICE_PROVIDER']) , getAgent);
+router.get(
+  '/agent/:agentId',
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  getAgent
+);
+
+router.get(
+  '/bookings',
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  getBookings
+);
+router.get(
+  '/booking/:bookingId',
+  verifyJWT,
+  isAuthorized(['SERVICE_PROVIDER']),
+  getBooking
+  
+);
 /**
  * TODO: Add a route to verify an Organization using legal documents with a machine learning model
  */

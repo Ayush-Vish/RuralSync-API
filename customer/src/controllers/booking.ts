@@ -21,7 +21,7 @@ type Location = {
 };
 
 type NewBookingData = {
-  customer: mongoose.Types.ObjectId;
+  client: mongoose.Types.ObjectId;
   service: mongoose.Types.ObjectId;
   bookingDate: Date;
   bookingTime: string;
@@ -90,10 +90,11 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
 
     // Build the booking object
     const newBookingData: NewBookingData = {
-      customer: customerId as any,
+      client: customerId as any,
       service: serviceId as any,
       bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
-      bookingTime: bookingTime, // Save time as string
+      bookingTime: bookingTime, // Save time as string, 
+
     };
 
     // If extra tasks are provided, add them to the booking
@@ -110,7 +111,7 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
     }
 
     // Create the new booking
-    const newBooking = await Booking.create(newBookingData);
+    const newBooking = await Booking.create({...newBookingData , serviceProvider : service.serviceProvider});
 
     res.status(201).json(newBooking);
   } catch (error) {
@@ -131,7 +132,7 @@ export const getCustomerBookings = async (req: RequestWithUser, res: Response): 
     }
 
     // Fetch all bookings associated with the customer
-    const customerBookings = await Booking.find({ customer: customerId })
+    const customerBookings = await Booking.find({ client: customerId })
       .sort({ bookingDate: -1 }); // Sort bookings by most recent first
 
     // Check if bookings are found

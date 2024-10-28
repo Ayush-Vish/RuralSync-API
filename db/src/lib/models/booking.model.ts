@@ -17,9 +17,9 @@ export const pointSchema = new mongoose.Schema({
 
 // Define the schema for a booking
 const bookingSchema = new mongoose.Schema({
-  customer: {
+  client: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Customer',
+    ref: 'Client',
     required: true,
   },
   serviceProvider: {
@@ -41,12 +41,11 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled'],
-    default: 'Pending',
+    enum: ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled' , "Not Assigned"],
+    default: 'Not Assigned',
   },
   totalPrice: {
     type: Number,
-    // required: true,
     min: 0,
   },
   paymentStatus: {

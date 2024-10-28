@@ -217,11 +217,18 @@ export const assignAgentForaBooking =async  (req :Request , res : Response,  nex
     if(!agent) {
       return next(new ApiError("Agent not Found ", 400 ) ) ;
     }
+    agent.status = "BUSY";
+    await agent.save();
     const booking = await Booking.findById(bookingId);
     if(!booking) {
       return next(new ApiError("Booking not Found " , 400 )) ;
     }
     booking.agent = agentId;
+    booking.status = "Pending";
+    await agent.save();
+    await booking.save();
+
+
     return new ApiResponse(res , 201 , "Booking Created" , {
       agentName : agent.name ,
       agentPhone : agent.phoneNumber,
@@ -394,6 +401,44 @@ const getAgent = async (req: Request, res: Response, next: NextFunction) =>  {
     return next(new ApiError("An error occurred: " + error.message, 500));
   }
 }
+
+const getBookings = async (req: RequestWithUser, res: Response, next: NextFunction) =>  {
+  try {
+    const serviceProviderId  = req.user.id;
+    const bookings = await Booking.find({ serviceProvider: serviceProviderId })
+      .populate('client', 'name email') // Populate customer details (optional)
+      .populate('service', 'name description') // Populate service details (optional)
+      .populate('agent', 'name email') // Populate agent details (optional)
+      .exec();
+      
+    return res.status(200).json({
+      message:"Booking fetched Successfully",
+      bookings
+    })
+  } catch (error) {
+    return next(new ApiError("An error occurred: " + error.message, 500));
+  }
+
+}
+
+const getBooking = async (req : Request , res:  Response , next : NextFunction) => {
+  try {
+    const {bookingId} = req.params ;
+    const booking = await Booking.findById(bookingId)
+    .populate('client', 'name email') // Populate customer details (optional)
+    .populate('service', 'name description') // Populate service details (optional)
+    .populate('agent', 'name email') // Populate agent details (optional)
+    .exec();
+    return res.json({
+      message : "Booking fetched successfully",
+      booking
+    })
+
+  } catch (error) {
+    return next(new ApiError("An Error occured " + error.message , 500))
+  }
+}
+
 export {
   getServiceProviderById,
   registerOrg,
@@ -407,6 +452,8 @@ export {
   deleteService, 
   getAllAgents, 
   deleteAgent, 
-  getAgent
+  getAgent, 
+  getBookings,
+  getBooking
 };
 
