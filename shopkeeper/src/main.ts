@@ -5,13 +5,14 @@ import routes from './routes/routes';
 import cookieParser from 'cookie-parser';
 import { connectToDb } from '@org/db';
 import { errorMiddleware } from '@org/utils';
-import cors from "cors";
 const app = express();
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 connectToDb();
+import cors from 'cors';
+const env = process.env.NODE_ENV || 'development';
 app.use(cors({
-  origin:"http://localhost:5173",
-  credentials:true
+  origin: env === 'development' ? 'http://localhost:5173' : 'https://ruralsync-service-provider.vercel.app',
+  credentials: true
 }))
 app.use(cookieParser());
 app.use(express.json());

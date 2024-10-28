@@ -11,9 +11,13 @@ import customerRoutes from './routes/customerRoutes'
 import bookingRoutes from './routes/bookingRoute'
 import { connectToDb } from '@org/db';
 
-
 const app = express();
-
+import cors from 'cors';
+const env = process.env.NODE_ENV || 'development';
+app.use(cors({
+  origin: env === 'development' ? 'http://localhost:5173' : 'https://ruralsync-service-provider.vercel.app',
+  credentials: true
+}))
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 
