@@ -4,7 +4,10 @@ import {
   assignAgent,
   assignAgentForaBooking,
   availableAgents,
+  deleteAgent,
   deleteService,
+  getAgent,
+  getAllAgents,
   getAllServices,
   getOrgDetails,
   registerOrg,
@@ -105,7 +108,7 @@ router.post(
  * @access Private
  */
 router.get(
-  '/check-availability',
+  '/agents',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
   availableAgents
@@ -162,6 +165,10 @@ router.delete(
   deleteService
 );
 
+router.get("/all-agents" , verifyJWT , isAuthorized(['SERVICE_PROVIDER']) , getAllAgents)
+router.delete("/agent/:agentId" , verifyJWT , isAuthorized(['SERVICE_PROVIDER']) , deleteAgent)
+
+router.get("/agent/:agentId" , verifyJWT , isAuthorized(['SERVICE_PROVIDER']) , getAgent);
 /**
  * TODO: Add a route to verify an Organization using legal documents with a machine learning model
  */

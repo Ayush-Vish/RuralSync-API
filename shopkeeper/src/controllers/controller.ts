@@ -267,16 +267,6 @@ interface SearchQuery{
   limit?: number;
 }
 
-interface ServiceDocument {
-  category: string[];
-  basePrice: number;
-  finalPrice: number;
-  ratings: {
-    average: number;
-  };
-  serviceProvider: any;
-  serviceCompany: any; 
-}
 
 
 const searchServices = async (req: Request, res: Response, next: NextFunction) => {
@@ -328,9 +318,12 @@ const searchServices = async (req: Request, res: Response, next: NextFunction) =
     return next(new ApiError("An error occurred: " + error.message, 500));
   }
 };
-const getAllServices = async (req: Request, res: Response, next: NextFunction) =>  {
+const getAllServices = async (req: RequestWithUser, res: Response, next: NextFunction) =>  {
   try {
-    const services = await Service.find();
+    const ownerId = req.user.id;
+    const services = await Service.find({
+      serviceProvider: ownerId,
+    });
     return res.status(200).json({
       message: "Services retrieved successfully",
       data: services,
@@ -354,6 +347,53 @@ const deleteService = async (req: RequestWithUser, res: Response, next: NextFunc
     return next(new ApiError("An error occurred: " + error.message, 500));
   }
 }
+const getAllAgents = async (req: RequestWithUser, res: Response, next: NextFunction) =>  {
+  try {
+    const ownerId = req.user.id;
+    const agents = await Agent.find({ serviceProviderId: ownerId });
+    return res.status(200).json({
+      message: "Agents retrieved successfully",
+      data: agents,
+    });
+  } catch (error) {
+    return next(new ApiError("An error occurred: " + error.message, 500));
+  }
+}
+const deleteAgent = async(req : Request , res : Response , next : NextFunction) =>  {
+  try {
+    const {agentId} = req.params;
+    const agent = await Agent.findByIdAndDelete(agentId);
+    if (!agent) {
+      return next(new ApiError("Agent not found", 404));
+    }
+    return res.status(200).json({ message: "Agent deleted successfully" });
+  } catch (error) {
+    return next(new ApiError("An error occurred: " + error.message, 500));
+  }
+}
+
+const getAgent = async (req: Request, res: Response, next: NextFunction) =>  {
+  try {
+    const {agentId} = req.params;
+    const agent = await Agent.findById(agentId);
+    if (!agent) {
+      return next(new ApiError("Agent not found", 404));
+    }
+    const agentBooking = await Booking.find({agent: agentId});
+    const agentServices = await Service.find({assignedAgents: agentId});
+    
+    return res.status(200).json({
+      message: "Agent retrieved successfully",
+      agent,
+      agentBooking,
+      agentServices
+
+
+    });
+  } catch (error) {
+    return next(new ApiError("An error occurred: " + error.message, 500));
+  }
+}
 export {
   getServiceProviderById,
   registerOrg,
@@ -364,6 +404,9 @@ export {
   availableAgents,
   searchServices,
   getAllServices,
-  deleteService
+  deleteService, 
+  getAllAgents, 
+  deleteAgent, 
+  getAgent
 };
 

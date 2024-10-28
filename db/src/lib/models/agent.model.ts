@@ -1,6 +1,7 @@
 import { hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import mongoose from 'mongoose'
+import { pointSchema } from './booking.model';
 // Define the schema for the Agent
 const agentSchema = new mongoose.Schema({
 
@@ -13,6 +14,11 @@ const agentSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  status:{
+    type: String,
+    default: "FREE", 
+    enum: ["BUSY", "FREE" , "OFFLINE"]
+  },
   password: { type: String, required: true },
   phoneNumber: {
     type: String,
@@ -23,12 +29,8 @@ const agentSchema = new mongoose.Schema({
     type: String,
   },
   location: {
-    latitude: {
-      type: Number,
-    },
-    longitude: {
-      type: Number,
-    }
+    type: pointSchema,
+    index: '2dsphere',
   },
   services: {
     type: [String], // Array of services like coolerRepair, washingMachineRepair
