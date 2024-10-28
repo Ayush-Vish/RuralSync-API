@@ -99,7 +99,10 @@ export const agentRegister = async (
       return next(new ApiError('Agent already exists', 400));
     }
     console.log(req.body)
-    const newAgent = await Agent.create({...req.body, serviceProviderId});
+    const newAgent = await Agent.create({...req.body, serviceProviderId, location:{
+      type: "Point",
+      coordinates: [req.body.location.longitude, req.body.location.latitude]
+    }});
    
     return res.status(201).json({
       message: 'Agent created successfully',

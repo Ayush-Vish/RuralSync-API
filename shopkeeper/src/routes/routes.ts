@@ -15,7 +15,7 @@ import {
   registerOrg,
   searchServices,
 } from '../controllers/controller';
-import { isAuthorized, verifyJWT } from '@org/utils';
+import { isAuthorized, upload, verifyJWT } from '@org/utils';
 
 const router = express.Router();
 

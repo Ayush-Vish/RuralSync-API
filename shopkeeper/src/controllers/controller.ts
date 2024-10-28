@@ -1,6 +1,6 @@
-import { Agent, Booking, Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
+import { Agent, Booking, Org, Service, ServiceProvider } from '@org/db';
 import { NextFunction, Request, Response } from 'express';
-import { ApiError, ApiResponse } from '@org/utils';
+import { ApiError, ApiResponse, uploadFileToS3 } from '@org/utils';
 
 const getServiceProviderById = async (req: Request, res: Response) => {
   try {
@@ -34,6 +34,16 @@ const updateServiceProvider = async (
     return next(new ApiError('An error occurred', 500));
   }
 };
+interface RequestWithUser extends Request {
+  user: {
+    id: string;
+  };
+  files: {
+    logo?: Express.Multer.File[];
+    images?: Express.Multer.File[];
+  };
+}
+
 const registerOrg = async (
   req: RequestWithUser,
   res: Response,
@@ -41,19 +51,18 @@ const registerOrg = async (
 ) => {
   try {
     const {
-      orgName,
+      name,
       address,
       phone,
       description,
       website,
-      logo,
       location,
       socialMedia,
       businessHours,
       isVerified = true,
     } = req.body;
-
-    if (!orgName || !address || !phone) {
+    console.log("req.body",req.body);
+    if (!name || !address || !phone) {
       return next(new ApiError('Organization name, address, and phone are required', 400));
     }
 
@@ -67,14 +76,30 @@ const registerOrg = async (
       return next(new ApiError('Owner can only register one organization', 400));
     }
 
+    // Handle logo upload
+    let logoUrl = '';
+    if (req.files && req.files.logo && req.files.logo[0]) {
+      const logoUpload = await uploadFileToS3(req.files.logo[0]);
+      logoUrl = logoUpload.url;
+    }
+
+    // Handle multiple images upload
+    let imageUrls: string[] = [];
+    if (req.files && req.files.images) {
+      const uploadPromises = req.files.images.map(file => uploadFileToS3(file));
+      const uploadResults = await Promise.all(uploadPromises);
+      imageUrls = uploadResults.map(result => result.url);
+    }
+
     const newOrg = new Org({
-      name: orgName,
+      name,
       address,
       phone,
       description,
       website,
-      logo,
-      location, 
+      logo: logoUrl,
+      images: imageUrls,
+      location,
       socialMedia,
       businessHours,
       isVerified,
@@ -83,7 +108,10 @@ const registerOrg = async (
 
     await newOrg.save();
 
-    return res.status(201).json({ message: 'Organization created successfully', data: newOrg });
+    return res.status(201).json({ 
+      message: 'Organization created successfully', 
+      data: newOrg 
+    });
   } catch (error) {
     return next(new ApiError(`An error occurred: ${error.message}`, 500));
   }

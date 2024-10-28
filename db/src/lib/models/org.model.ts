@@ -9,6 +9,7 @@ const orgSchema = new Schema({
   phone: { type: String },
   website: { type: String },
   logo: { type: String },
+  images: [{ type: String }],
   location: { type: pointSchema, index: '2dsphere' },
   services: [{ type: Schema.Types.ObjectId, ref: 'Service', required: false }],
   agents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
