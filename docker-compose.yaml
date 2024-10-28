@@ -10,7 +10,7 @@ services:
     depends_on:
       # - agent
       - auth
-      # - customer
+      # - client
       # - shopkeeper
      
 
@@ -39,12 +39,12 @@ services:
     ports:
       - "5001:5001"
 
-  # customer:
+  # client:
   #   build:
   #     context: .
   #     dockerfile: Dockerfile
   #     args:
-  #       PROJECT: customer
+  #       PROJECT: client
   #   env_file:
   #     - .env
   #   environment:

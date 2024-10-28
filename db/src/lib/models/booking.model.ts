@@ -35,7 +35,7 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  bookingTime: { // New field for time (e.g., 10:30 AM)
+  bookingTime: {
     type: String,
     required: true,
   },
