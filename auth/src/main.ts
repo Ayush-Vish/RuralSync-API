@@ -12,8 +12,9 @@ connectToDb();
 app.use(express.json());
 app.use(cookieParser());
 const env = process.env.NODE_ENV || 'development';
+
 app.use(cors({
-  origin: env === 'development' ? 'http://localhost:5173' : 'https://ruralsync-service-provider.vercel.app',
+  origin: [ 'http://localhost:5173', 'https://ruralsync-service-provider.vercel.app'],
   credentials: true
 }))
 app.use('/auth' ,authRoutes);

@@ -98,7 +98,7 @@ export const agentRegister = async (
     if (agentExists) {
       return next(new ApiError('Agent already exists', 400));
     }
-
+    console.log(req.body)
     const newAgent = await Agent.create({...req.body, serviceProviderId});
    
     return res.status(201).json({
