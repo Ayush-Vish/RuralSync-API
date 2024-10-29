@@ -24,21 +24,24 @@ export const uploadFileToS3 = async (
   if (!file || !file.buffer) {
     throw new Error('Invalid file data');
   }
-  console.time();
+  console.time("upload" );
   const buffer = await sharp(file.buffer)
     .resize({})
     .toBuffer();
-  console.timeEnd();
+  console.timeEnd("upload");
+    
   const params = {
     Bucket: bucketName,
-    Key: crypto.randomBytes(32).toString('hex') + file.originalname,
+    Key: Date.now() + file.originalname,
     Body: buffer,
     ContentType: file.mimetype,
   };
 
   try {
+    console.time("S3")
     const command = new PutObjectCommand(params);
     await s3.send(command);
+    console.timeEnd("S3")
     return {
       url: `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`,
     };
