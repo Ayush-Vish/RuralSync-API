@@ -1,5 +1,5 @@
-import { Agent, Booking, Org, Service, ServiceProvider } from '@org/db';
-import { NextFunction, Request, Response } from 'express';
+import { Agent, Booking, Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
+import { json, NextFunction, Request, Response } from 'express';
 import { ApiError, ApiResponse, uploadFileToS3 } from '@org/utils';
 
 const getServiceProviderById = async (req: Request, res: Response) => {
@@ -34,15 +34,7 @@ const updateServiceProvider = async (
     return next(new ApiError('An error occurred', 500));
   }
 };
-interface RequestWithUser extends Request {
-  user: {
-    id: string;
-  };
-  files: {
-    logo?: Express.Multer.File[];
-    images?: Express.Multer.File[];
-  };
-}
+
 
 const registerOrg = async (
   req: RequestWithUser,
@@ -146,6 +138,7 @@ const addNewService = async (
 ) => {
   try {
     console.log('Add new service');
+
     const {
       name,
       description,
@@ -158,39 +151,71 @@ const addNewService = async (
       tags
     } = req.body;
 
-    const ownerId = req.user.id;
-    console.log(req.body)
-    if (!name || !description || !basePrice || !category || !availability || !location  ) {
-      return next(new ApiError('All required fields must be provided', 400));
-    }
-    
-    console.log(location.coordinates[0]);
- 
+    console.log(req.body);
+
+    const ownerId = req.user?.id;
     if (!ownerId) {
       return next(new ApiError('Owner Id not found', 400));
     }
+
+    // Validate required fields
+    if (
+      !name ||
+      !description ||
+      !basePrice ||
+      !category ||
+      !availability ||
+      !location
+    ) {
+      return next(new ApiError('All required fields must be provided', 400));
+    }
+
     const owner = await ServiceProvider.findById(ownerId);
     if (!owner) {
       return next(new ApiError('Owner not found', 404));
     }
 
-    const org = await Org.findOne({ ownerId: req.user.id });
+    const org = await Org.findOne({ ownerId });
     if (!org) {
       return next(new ApiError('Organization not found', 404));
     }
+
+    // Handle Image Upload
+    console.time('Upload Images');
+    let imageUrls: string[] = [];
+    if (req.files && Array.isArray(req.files.images)) {
+      const uploadPromises = req.files.images.map((file) =>
+        uploadFileToS3(file)
+      );
+      const uploadResults = await Promise.all(uploadPromises);
+      imageUrls = uploadResults.map((result) => result.url);
+    }
+    console.timeEnd('Upload Images');
+
+    // Ensure availability and location are properly parsed
+    const parsedAvailability = Array.isArray(availability)
+      ? availability.map((item) => ({
+          day: item.day,
+          startTime: item.startTime,
+          endTime: item.endTime,
+        }))
+      : [];
+
+    const parsedLocation = JSON.parse(location);
 
     const newService = new Service({
       name,
       description,
       basePrice,
       category,
-      availability,
+      availability: parsedAvailability,
       estimatedDuration,
       location: {
         type: 'Point',
-        coordinates: [location.coordinates[0], location.coordinates[1]]
+        coordinates: parsedLocation.coordinates,
       },
-      address:owner.address,
+      images: imageUrls,
+      address: address || owner.address, // Use owner address as fallback
       tags: tags || [],
       ownerId,
       serviceCompany: org._id,
@@ -198,15 +223,22 @@ const addNewService = async (
     });
 
     await newService.save();
-    await Org.findByIdAndUpdate(org._id, { $push: { services: newService._id } });
+
+    // Update Organization with new service
+    await Org.findByIdAndUpdate(org._id, {
+      $push: { services: newService._id },
+    });
 
     return res
       .status(201)
       .json({ message: 'Service added successfully', data: newService });
+
   } catch (error) {
+    console.error('Error adding service:', error);
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
+
 const assignAgent = async (req, res, next) => {
   try {
     const { agentId, serviceId } = req.body;

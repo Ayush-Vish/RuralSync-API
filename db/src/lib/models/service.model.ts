@@ -35,6 +35,7 @@ const serviceSchema = new Schema({
     average: { type: Number, default: 0 },
     count: { type: Number, default: 0 }
   },
+images  : [{ type: String }],
   reviews: [{ type: Schema.Types.ObjectId, ref: 'Review' }],
   assignedAgents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
   location: {

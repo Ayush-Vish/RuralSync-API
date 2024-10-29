@@ -89,6 +89,7 @@ router.post(
   '/add-new-service',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
+  upload.fields([{ name: 'images', maxCount: 5 }]),
   addNewService
 );
 

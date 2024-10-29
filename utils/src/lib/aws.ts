@@ -29,7 +29,7 @@ export const uploadFileToS3 = async (
     .resize({})
     .toBuffer();
   console.timeEnd("upload");
-    
+
   const params = {
     Bucket: bucketName,
     Key: Date.now() + file.originalname,
@@ -76,7 +76,7 @@ const upload = multer({
     sanitizeFile(file, callback);
   },
   limits: {
-    fileSize: 1024 * 1024 * 2, // 2MB file size
+    fileSize: 1024 * 1024 * 10, // 2MB file size
   },
 });
 
