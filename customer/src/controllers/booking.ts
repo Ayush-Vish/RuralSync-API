@@ -179,20 +179,13 @@ export const deleteBooking = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const getServices = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+
+export const getAllServices = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('Get Services');
-    const { orgId } = req.params;
-    const services = await Service.find({ orgId });
-    if (!services) {
-      return next(new ApiError('No services found', 404));
-    }
-    return res.status(200).json(services);
+    const services = await Service.find({});
+    // console.log(services);
+    res.status(200).json(services);
   } catch (error) {
-    return next(new ApiError('An error occurred: ' + error.message, 500));
+    next(error);
   }
 };
