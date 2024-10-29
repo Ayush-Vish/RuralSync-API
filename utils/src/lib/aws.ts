@@ -24,9 +24,11 @@ export const uploadFileToS3 = async (
   if (!file || !file.buffer) {
     throw new Error('Invalid file data');
   }
+  console.time();
   const buffer = await sharp(file.buffer)
-    .resize({ height: 1920, width: 1080, fit: 'contain' })
+    .resize({})
     .toBuffer();
+  console.timeEnd();
   const params = {
     Bucket: bucketName,
     Key: crypto.randomBytes(32).toString('hex') + file.originalname,
@@ -45,3 +47,34 @@ export const uploadFileToS3 = async (
     throw new Error('File upload failed');
   }
 };
+import multer from 'multer';
+import path from 'path';
+
+// Define the storage configuration
+const storage = multer.memoryStorage(); // Use memory storage to get the file buffer
+
+// Define the file filter function
+function sanitizeFile(file, cb) {
+  const fileExts = ['.png', '.jpg', '.jpeg', '.gif'];
+  const isAllowedExt = fileExts.includes(path.extname(file.originalname.toLowerCase()));
+  const isAllowedMimeType = file.mimetype.startsWith('image/');
+
+  if (isAllowedExt && isAllowedMimeType) {
+    return cb(null, true);
+  } else {
+    cb('Error: File type not allowed!');
+  }
+}
+
+// Configure multer
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, callback) => {
+    sanitizeFile(file, callback);
+  },
+  limits: {
+    fileSize: 1024 * 1024 * 2, // 2MB file size
+  },
+});
+
+export { upload};

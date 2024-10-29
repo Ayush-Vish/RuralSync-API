@@ -87,18 +87,6 @@ export const isAuthorized = (allowedRoles: UserRole[]) => {
   };
 };
 
-// Multer configuration for file upload
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 1024 * 1024 * 5, // Limit to 5MB
-  },
-});
-
-export {
-  upload
-};
-
 
 export const loactionMiddleware = async (req :RequestWithUser , res : Response , next : NextFunction) => {
   try {

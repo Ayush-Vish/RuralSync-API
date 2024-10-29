@@ -62,6 +62,10 @@ router.post(
   '/register-org',
   verifyJWT,
   isAuthorized(['SERVICE_PROVIDER']),
+  upload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'images', maxCount: 5 },
+  ]),
   registerOrg
 );
 

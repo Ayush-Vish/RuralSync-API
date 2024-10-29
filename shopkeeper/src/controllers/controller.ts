@@ -75,13 +75,14 @@ const registerOrg = async (
     if (existingOrg) {
       return next(new ApiError('Owner can only register one organization', 400));
     }
-
+    console.log("1");
     // Handle logo upload
     let logoUrl = '';
     if (req.files && req.files.logo && req.files.logo[0]) {
       const logoUpload = await uploadFileToS3(req.files.logo[0]);
       logoUrl = logoUpload.url;
     }
+    console.log("2");
 
     // Handle multiple images upload
     let imageUrls: string[] = [];
@@ -90,7 +91,7 @@ const registerOrg = async (
       const uploadResults = await Promise.all(uploadPromises);
       imageUrls = uploadResults.map(result => result.url);
     }
-
+    console.log("3");
     const newOrg = new Org({
       name,
       address,
@@ -99,12 +100,13 @@ const registerOrg = async (
       website,
       logo: logoUrl,
       images: imageUrls,
-      location,
-      socialMedia,
-      businessHours,
+      location : JSON.parse(location) ,
+      socialMedia : JSON.parse(socialMedia),
+      businessHours : JSON.parse(businessHours),  
       isVerified,
       ownerId: req.user.id,
     });
+    console.log("4");
 
     await newOrg.save();
 
