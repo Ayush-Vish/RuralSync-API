@@ -22,8 +22,8 @@ const agentSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phoneNumber: {
     type: String,
-    // required: true
-    // required: true
+
+   
   },
   address: {
     type: String,

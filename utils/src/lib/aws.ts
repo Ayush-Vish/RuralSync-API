@@ -1,6 +1,5 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
-import crypto from 'crypto';
 dotenv.config();
 import sharp from 'sharp';
 const s3 = new S3Client({
@@ -10,6 +9,7 @@ const s3 = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
+
 
 /**
  * Utility function to upload a file to S3

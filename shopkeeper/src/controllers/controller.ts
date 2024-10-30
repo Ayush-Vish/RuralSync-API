@@ -1,6 +1,6 @@
 import { Agent, Booking, Org, RequestWithUser, Service, ServiceProvider } from '@org/db';
 import { json, NextFunction, Request, Response } from 'express';
-import { ApiError, ApiResponse, uploadFileToS3 } from '@org/utils';
+import { addEmailJob, ApiError, ApiResponse, emailQueue, uploadFileToS3 } from '@org/utils';
 
 const getServiceProviderById = async (req: Request, res: Response) => {
   try {
@@ -279,16 +279,43 @@ export const assignAgentForaBooking =async  (req :Request , res : Response,  nex
     if(!agent) {
       return next(new ApiError("Agent not Found ", 400 ) ) ;
     }
-    agent.status = "BUSY";
-    await agent.save();
-    const booking = await Booking.findById(bookingId);
+    const  booking = await Booking.findById(bookingId)
+                    .populate('client', 'name email') // Populate customer details (optional)
+                    .populate('service', 'name description')
+                  
     if(!booking) {
       return next(new ApiError("Booking not Found " , 400 )) ;
     }
+    console.log(booking);
+     
+    await addEmailJob({
+      email: agent.email,
+      subject: 'New Booking',
+      content:`
+        <p> Dear ${agent.name} </p>
+        <p> You have been assigned a new booking </p>
+        <p> Booking Id : ${bookingId} </p>
+        <p> Service : ${JSON.stringify(booking.service)} </p>
+        <p> Client : ${JSON.stringify(booking.client)} </p>
+      `
+    })
     booking.agent = agentId;
     booking.status = "Pending";
+    agent.status = "BUSY";
     await agent.save();
     await booking.save();
+    await addEmailJob({
+      email : (booking.client as any).email,
+      subject : "Booking Confirmation",
+      content : `
+        <p> Dear ${(booking.client as any).name} </p>
+        <p> Your Booking has been confirmed </p>
+        <p> Booking Id : ${bookingId} </p>
+        <p> Service : ${JSON.stringify(booking.service)} </p>
+        <p> Agent : ${JSON.stringify(agent)} </p>
+      `
+    })
+    
 
 
     return new ApiResponse(res , 201 , "Booking Created" , {

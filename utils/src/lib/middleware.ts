@@ -58,7 +58,6 @@ export const verifyJWT = async (
     }
 
     const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
-    // Attach user details to the request object
     req.user = {
       id: user.id,
       email: user.email,
