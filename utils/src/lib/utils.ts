@@ -2,7 +2,8 @@ import { Agent, Client, Role, ServiceProvider } from '@org/db';
 import { sign, verify } from 'jsonwebtoken';
 import { Response } from 'express';
 import { Mongoose, ObjectId, Schema } from 'mongoose';
-
+import useragent from "useragent";
+import { addEmailJob } from './queue';
 
 export function utils(): string {
   return 'utils';
@@ -22,8 +23,32 @@ export const errorMiddleware = (err,req,res,next) =>{
 }
 
 
+export const getDeviceAndLocationInfo = (req) => {
+  const userAgent = useragent.parse(req.headers['user-agent']);
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
+  return {
+    device: `${userAgent.os.toString()}, ${userAgent.device.toString()}`,
+    browser: userAgent.toAgent(),
+    ip: ip || 'Unknown IP',
+  };
+};
+export const sendLoginConfirmationEmail = async (user, role, req) => {
+  const { device, browser, ip } = getDeviceAndLocationInfo(req);
 
+  await addEmailJob({
+    email: user.email,
+    subject: 'Login Confirmation',
+    content: `
+      <p>Dear ${user.name || 'User'},</p>
+      <p>Your account as ${role} has been accessed successfully.</p>
+      <p><strong>Device:</strong> ${device}</p>
+      <p><strong>Browser:</strong> ${browser}</p>
+      <p><strong>IP Address:</strong> ${ip}</p>
+      <p>If this wasn't you, please contact support immediately.</p>
+    `,
+  });
+};
 
 export class ApiResponse  {
   constructor (res:Response , statusCode : number , message : string , data : unknown ) {

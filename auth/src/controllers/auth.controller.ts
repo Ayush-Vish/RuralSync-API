@@ -1,7 +1,10 @@
 import {
+  addEmailJob,
   ApiError,
   cookieOptions,
   generateAccessAndRefreshToken,
+  getDeviceAndLocationInfo,
+  sendLoginConfirmationEmail,
 } from '@org/utils';
 import { Request, Response, NextFunction } from 'express';
 
@@ -134,13 +137,13 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+
 const loginServiceProvider = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    console.log('Login Service Provider');
     const { email, password } = req.body;
     if (!email || !password) {
       return next(new ApiError('Email and password are required', 400));
@@ -150,7 +153,6 @@ const loginServiceProvider = async (
       return next(new ApiError('Invalid credentials', 400));
     }
 
-    // Validate password
     const isMatch = await bcrypt.compare(password, serviceProvider.password);
     if (!isMatch) {
       return next(new ApiError('Invalid credentials', 400));
@@ -162,6 +164,8 @@ const loginServiceProvider = async (
     );
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
+    await sendLoginConfirmationEmail(serviceProvider, 'SERVICE_PROVIDER', req);
+
 
     return res.status(200).json({
       message: 'Login successful',
@@ -231,6 +235,7 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
     
     const agentResponse = agent.toObject();
     delete agentResponse.password;
+    await sendLoginConfirmationEmail(agent, 'AGENT', req);
 
     // Set cookies and send response
     return res
@@ -284,6 +289,7 @@ const loginClient = async (req: Request, res: Response, next: NextFunction) => {
     );
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
+    await sendLoginConfirmationEmail(client, 'CLIENT', req);
 
     return res.status(200).json({
       message: 'Login successful',
