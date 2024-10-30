@@ -41,7 +41,8 @@
         "customer-e2e/**/*",
         "agent-e2e/**/*",
         "shopkeeper-e2e/**/*",
-        "email-service-e2e/**/*"
+        "email-service-e2e/**/*",
+        "audit-log-e2e/**/*"
       ]
     }
   ]

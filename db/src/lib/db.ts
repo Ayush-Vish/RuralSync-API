@@ -26,3 +26,4 @@ export * from "./models/service.model";
 export * from "./models/review.model";
 export * from "./models/booking.model";
 export * from "./models/serviceItem.model"
+export * from "./models/auditLog.model"
