@@ -1,5 +1,5 @@
 import { Booking, RequestWithUser, Service } from '@org/db';
-import { ApiError } from '@org/utils';
+import { addEmailJob, ApiError } from '@org/utils';
 import { RequestId } from 'aws-sdk/clients/cloudwatchlogs';
 import { NextFunction, Request, RequestParamHandler, Response } from 'express';
 import moment from 'moment';
@@ -29,7 +29,10 @@ type NewBookingData = {
   location?: Location;
 };
 
-export const createBooking = async (req: RequestWithUser, res: Response): Promise<void> => {
+export const createBooking = async (
+  req: RequestWithUser,
+  res: Response
+): Promise<void> => {
   try {
     const customerId = req.user.id; // Assuming customer ID is extracted from the authenticated user
     const {
@@ -55,7 +58,11 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
     // Validate booking time (e.g., "10:00 AM", "2:30 PM")
     const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
     if (!timeRegex.test(bookingTime)) {
-      res.status(400).json({ message: 'Invalid booking time format. Use format like "10:00 AM"' });
+      res
+        .status(400)
+        .json({
+          message: 'Invalid booking time format. Use format like "10:00 AM"',
+        });
       return;
     }
 
@@ -68,7 +75,8 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
         location.coordinates.length !== 2
       ) {
         res.status(400).json({
-          message: 'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
+          message:
+            'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
         });
         return;
       }
@@ -82,9 +90,13 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
     }
 
     // Validate and format the date using moment.js
-    const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format('YYYY-MM-DD');
+    const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format(
+      'YYYY-MM-DD'
+    );
     if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
-      res.status(400).json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
+      res
+        .status(400)
+        .json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
       return;
     }
 
@@ -93,8 +105,7 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
       client: customerId as any,
       service: serviceId as any,
       bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
-      bookingTime: bookingTime, // Save time as string, 
-
+      bookingTime: bookingTime, // Save time as string,
     };
 
     // If extra tasks are provided, add them to the booking
@@ -111,7 +122,42 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
     }
 
     // Create the new booking
-    const newBooking = await Booking.create({...newBookingData , serviceProvider : service.serviceProvider});
+    const newBooking = await Booking.create({
+      ...newBookingData,
+      serviceProvider: service.serviceProvider,
+    });
+    const populatedBooking = await Booking.findById(newBooking._id)
+      .populate('service', 'name description')
+      .populate('client', 'name email')
+      .populate('serviceProvider', 'name email');
+
+    if (populatedBooking) {
+      // Send email to client
+      await addEmailJob({
+        to: (populatedBooking.client as any).email,
+        subject: 'Booking Confirmation',
+        text: `Hello ${
+          (populatedBooking.client as any).name
+        },\n\nYour booking for ${(populatedBooking.service as any).name} on ${(
+          populatedBooking.bookingDate as any
+        ).toDateString()} at ${
+          populatedBooking.bookingTime as any
+        } has been confirmed.\n\nThank you for choosing our service.\n\nBest,\nService Provider`,
+      });
+
+      // Send email to service provider
+      await addEmailJob({
+        to: (populatedBooking.serviceProvider as any).email,
+        subject: 'New Booking',
+        text: `Hello ${
+          (populatedBooking.serviceProvider as any).name
+        },\n\nYou have a new booking for ${
+          (populatedBooking.service as any).name
+        } on ${(populatedBooking.bookingDate as any).toDateString()} at ${
+          populatedBooking.bookingTime as any
+        }.\n\nBest,\nService`,
+      });
+    }
 
     res.status(201).json(newBooking);
   } catch (error) {
@@ -121,7 +167,10 @@ export const createBooking = async (req: RequestWithUser, res: Response): Promis
 };
 
 // Get Customer Bookings
-export const getCustomerBookings = async (req: RequestWithUser, res: Response): Promise<void> => {
+export const getCustomerBookings = async (
+  req: RequestWithUser,
+  res: Response
+): Promise<void> => {
   try {
     const customerId = req.user.id; // Assuming customer ID is extracted from authenticated user
 
@@ -132,8 +181,9 @@ export const getCustomerBookings = async (req: RequestWithUser, res: Response): 
     }
 
     // Fetch all bookings associated with the customer
-    const customerBookings = await Booking.find({ client: customerId })
-      .sort({ bookingDate: -1 }); // Sort bookings by most recent first
+    const customerBookings = await Booking.find({ client: customerId }).sort({
+      bookingDate: -1,
+    }); // Sort bookings by most recent first
 
     // Check if bookings are found
     if (customerBookings.length === 0) {
@@ -149,13 +199,16 @@ export const getCustomerBookings = async (req: RequestWithUser, res: Response): 
   }
 };
 // Delete a Booking
-export const deleteBooking = async (req: Request, res: Response): Promise<void> => {
+export const deleteBooking = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     // Get the booking ID from the request parameters
-    console.log("adihsjdfbhjfbdjhfbg",req.params);
+    console.log('adihsjdfbhjfbdjhfbg', req.params);
     const { id } = req.params;
 
-    console.log("adillllllll",id);
+    console.log('adillllllll', id);
     // Check if the booking ID is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(400).json({ message: 'Invalid booking ID format' });
@@ -179,8 +232,11 @@ export const deleteBooking = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-
-export const getAllServices = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllServices = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const services = await Service.find({});
     // console.log(services);
