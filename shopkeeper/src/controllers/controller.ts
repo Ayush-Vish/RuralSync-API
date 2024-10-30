@@ -292,10 +292,14 @@ export const assignAgentForaBooking = async (
 ) => {
   try {
     const { agentId, bookingId } = req.body;
+
+    // Retrieve agent and check if exists
     const agent = await Agent.findById(agentId);
     if (!agent) {
       return next(new ApiError('Agent not Found ', 400));
     }
+
+    // Retrieve booking and populate required fields
     const booking = await Booking.findById(bookingId)
       .populate('client', 'name email') // Populate customer details (optional)
       .populate('service', 'name description');
@@ -303,8 +307,11 @@ export const assignAgentForaBooking = async (
     if (!booking) {
       return next(new ApiError('Booking not Found ', 400));
     }
-    console.log(booking);
 
+    console.log('Agent:', agent);
+    console.log('Booking:', booking);
+
+    // Send email to agent
     await addEmailJob({
       email: agent.email,
       subject: 'New Booking Assigned',
@@ -330,36 +337,45 @@ export const assignAgentForaBooking = async (
       `,
     });
 
+    // Send email to client
+    if (booking.client && (booking.client as any ).email) {
+      console.log('Sending email to client:', (booking.client as any ).email);
+      await addEmailJob({
+        email:(booking.client as any ).email,
+        subject: 'Booking Confirmation',
+        content: `
+          <p>Dear ${(booking.client as any).name},</p>
+          <p>Your booking has been confirmed. Please find the details below:</p>
+          <p><strong>Booking ID:</strong> ${bookingId}</p>
+          <p><strong>Service:</strong> ${(booking.service as any).name}</p>
+          <p><strong>Agent:</strong> ${agent.name}</p>
+          <p><strong>Booking Date:</strong> ${booking.bookingDate.toDateString()}</p>
+          <p><strong>Booking Time:</strong> ${booking.bookingTime}</p>
+          <p><strong>Location:</strong> ${booking.location.coordinates.join(
+            ', '
+          )}</p>
+          <p><strong>Extra Tasks:</strong></p>
+          <ul>
+            ${booking.extraTasks
+              .map((task) => `<li>${task.description} - ${task.extraPrice}</li>`)
+              .join('')}
+          </ul>
+          <p>Thank you for choosing our service. We look forward to serving you.</p>
+          <p>Best regards,<br/>Service Provider</p>
+        `,
+      });
+    } else {
+      console.warn('Client email not found or client not populated correctly');
+    }
+
+    // Update booking and agent status
     booking.agent = agentId;
     booking.status = 'Pending';
     agent.status = 'BUSY';
     await agent.save();
     await booking.save();
 
-    await addEmailJob({
-      email: (booking.client as any).email,
-      subject: 'Booking Confirmation',
-      content: `
-        <p>Dear ${(booking.client as any).name},</p>
-        <p>Your booking has been confirmed. Please find the details below:</p>
-        <p><strong>Booking ID:</strong> ${bookingId}</p>
-        <p><strong>Service:</strong> ${(booking.service as any).name}</p>
-        <p><strong>Agent:</strong> ${agent.name}</p>
-        <p><strong>Booking Date:</strong> ${booking.bookingDate.toDateString()}</p>
-        <p><strong>Booking Time:</strong> ${booking.bookingTime}</p>
-        <p><strong>Location:</strong> ${booking.location.coordinates.join(
-          ', '
-        )}</p>
-        <p><strong>Extra Tasks:</strong></p>
-        <ul>
-          ${booking.extraTasks
-            .map((task) => `<li>${task.description} - ${task.extraPrice}</li>`)
-            .join('')}
-        </ul>
-        <p>Thank you for choosing our service. We look forward to serving you.</p>
-        <p>Best regards,<br/>Service Provider</p>
-      `,
-    });
+    // Send response
     return new ApiResponse(res, 201, 'Booking Created', {
       agentName: agent.name,
       agentPhone: agent.phoneNumber,
@@ -367,6 +383,7 @@ export const assignAgentForaBooking = async (
       agentId,
     });
   } catch (error) {
+    console.error('Error in assignAgentForaBooking:', error);
     return next(new ApiError(error.message, 400));
   }
 };

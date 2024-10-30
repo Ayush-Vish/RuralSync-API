@@ -58,11 +58,9 @@ export const createBooking = async (
     // Validate booking time (e.g., "10:00 AM", "2:30 PM")
     const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
     if (!timeRegex.test(bookingTime)) {
-      res
-        .status(400)
-        .json({
-          message: 'Invalid booking time format. Use format like "10:00 AM"',
-        });
+      res.status(400).json({
+        message: 'Invalid booking time format. Use format like "10:00 AM"',
+      });
       return;
     }
 
@@ -129,34 +127,39 @@ export const createBooking = async (
     const populatedBooking = await Booking.findById(newBooking._id)
       .populate('service', 'name description')
       .populate('client', 'name email')
-      .populate('serviceProvider', 'name email');
+      .populate('serviceProvider', 'name email')
+      .exec();
+    console.log('PopulatedBooking ', populatedBooking);
+    await populatedBooking.save();
 
     if (populatedBooking) {
-      // Send email to client
-      await addEmailJob({
-        to: (populatedBooking.client as any).email,
-        subject: 'Booking Confirmation',
-        text: `Hello ${
-          (populatedBooking.client as any).name
-        },\n\nYour booking for ${(populatedBooking.service as any).name} on ${(
-          populatedBooking.bookingDate as any
-        ).toDateString()} at ${
-          populatedBooking.bookingTime as any
-        } has been confirmed.\n\nThank you for choosing our service.\n\nBest,\nService Provider`,
-      });
+      // Extract necessary information
+      const clientEmail = (populatedBooking.client as any).email;
+      const clientName = (populatedBooking.client as any).name;
+      const serviceName = (populatedBooking.service as any).name;
+      const bookingDate = (populatedBooking.bookingDate as any).toDateString();
+      const bookingTime = populatedBooking.bookingTime as any;
+      const serviceProviderEmail = (populatedBooking.serviceProvider as any)
+        .email;
+      const serviceProviderName = (populatedBooking.serviceProvider as any)
+        .name;
 
+      // Send email to client
+      console.log("Client ema", clientEmail)
+      await addEmailJob({
+        email: clientEmail,
+        subject: 'Booking Confirmation',
+        content: `Hello ${clientName},\n\nYour booking for ${serviceName} on ${bookingDate} at ${bookingTime} has been confirmed.\n\nThank you for choosing our service.\n\nBest,\nService Provider`,
+      });
+      console.log("Client ema", serviceProviderEmail);
       // Send email to service provider
       await addEmailJob({
-        to: (populatedBooking.serviceProvider as any).email,
+        email: serviceProviderEmail,
         subject: 'New Booking',
-        text: `Hello ${
-          (populatedBooking.serviceProvider as any).name
-        },\n\nYou have a new booking for ${
-          (populatedBooking.service as any).name
-        } on ${(populatedBooking.bookingDate as any).toDateString()} at ${
-          populatedBooking.bookingTime as any
-        }.\n\nBest,\nService`,
+        content: `Hello ${serviceProviderName},\n\nYou have a new booking for ${serviceName} on ${bookingDate} at ${bookingTime}.\n\nBest,\nService`,
       });
+    } else {
+      res.status(404).json({ message: 'Failed to Send email' });
     }
 
     res.status(201).json(newBooking);

@@ -12,6 +12,7 @@ services:
       # - auth
       # - client
       # - shopkeeper
+      - email-service
       - redis
      
 
@@ -71,4 +72,16 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     command: ["redis-server", "--appendonly", "yes"]
+  email-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: email-service
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5005:5005"
 
