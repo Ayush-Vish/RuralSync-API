@@ -1,4 +1,5 @@
 import {
+  addAuditLogJob,
   addEmailJob,
   ApiError,
   cookieOptions,
@@ -165,7 +166,7 @@ const loginServiceProvider = async (
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
     await sendLoginConfirmationEmail(serviceProvider, 'SERVICE_PROVIDER', req);
-
+    
 
     return res.status(200).json({
       message: 'Login successful',
@@ -255,7 +256,6 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
       message: error.message,
       stack: error.stack
     });
-
     if (error.name === 'BcryptError') {
       return next(new ApiError('Password comparison failed', 500));
     }
@@ -290,7 +290,7 @@ const loginClient = async (req: Request, res: Response, next: NextFunction) => {
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
     await sendLoginConfirmationEmail(client, 'CLIENT', req);
-
+    
     return res.status(200).json({
       message: 'Login successful',
       data: client,

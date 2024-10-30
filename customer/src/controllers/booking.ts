@@ -1,5 +1,5 @@
 import { Booking, RequestWithUser, Service } from '@org/db';
-import { addEmailJob, ApiError } from '@org/utils';
+import { addAuditLogJob, addEmailJob, ApiError } from '@org/utils';
 import { RequestId } from 'aws-sdk/clients/cloudwatchlogs';
 import { NextFunction, Request, RequestParamHandler, Response } from 'express';
 import moment from 'moment';
@@ -132,35 +132,50 @@ export const createBooking = async (
     console.log('PopulatedBooking ', populatedBooking);
     await populatedBooking.save();
 
-    if (populatedBooking) {
-      // Extract necessary information
-      const clientEmail = (populatedBooking.client as any).email;
-      const clientName = (populatedBooking.client as any).name;
-      const serviceName = (populatedBooking.service as any).name;
-      const bookingDate = (populatedBooking.bookingDate as any).toDateString();
-      const bookingTime = populatedBooking.bookingTime as any;
-      const serviceProviderEmail = (populatedBooking.serviceProvider as any)
-        .email;
-      const serviceProviderName = (populatedBooking.serviceProvider as any)
-        .name;
+    // if (populatedBooking) {
+    //   // Extract necessary information
+    //   const clientEmail = (populatedBooking.client as any).email;
+    //   const clientName = (populatedBooking.client as any).name;
+    //   const serviceName = (populatedBooking.service as any).name;
+    //   const bookingDate = (populatedBooking.bookingDate as any).toDateString();
+    //   const bookingTime = populatedBooking.bookingTime as any;
+    //   const serviceProviderEmail = (populatedBooking.serviceProvider as any)
+    //     .email;
+    //   const serviceProviderName = (populatedBooking.serviceProvider as any)
+    //     .name;
 
-      // Send email to client
-      console.log("Client ema", clientEmail)
-      await addEmailJob({
-        email: clientEmail,
-        subject: 'Booking Confirmation',
-        content: `Hello ${clientName},\n\nYour booking for ${serviceName} on ${bookingDate} at ${bookingTime} has been confirmed.\n\nThank you for choosing our service.\n\nBest,\nService Provider`,
-      });
-      console.log("Client ema", serviceProviderEmail);
-      // Send email to service provider
-      await addEmailJob({
-        email: serviceProviderEmail,
-        subject: 'New Booking',
-        content: `Hello ${serviceProviderName},\n\nYou have a new booking for ${serviceName} on ${bookingDate} at ${bookingTime}.\n\nBest,\nService`,
-      });
-    } else {
-      res.status(404).json({ message: 'Failed to Send email' });
-    }
+    //   // Send email to client
+    //   console.log("Client ema", clientEmail)
+    //   await addEmailJob({
+    //     email: clientEmail,
+    //     subject: 'Booking Confirmation',
+    //     content: `Hello ${clientName},\n\nYour booking for ${serviceName} on ${bookingDate} at ${bookingTime} has been confirmed.\n\nThank you for choosing our service.\n\nBest,\nService Provider`,
+    //   });
+    //   console.log("Client ema", serviceProviderEmail);
+    //   // Send email to service provider
+    //   await addEmailJob({
+    //     email: serviceProviderEmail,
+    //     subject: 'New Booking',
+    //     content: `Hello ${serviceProviderName},\n\nYou have a new booking for ${serviceName} on ${bookingDate} at ${bookingTime}.\n\nBest,\nService`,
+    //   });
+    // } else {
+    //   res.status(404).json({ message: 'Failed to Send email' });
+    // }
+    await addAuditLogJob({
+      action: 'CREATE_BOOKING',
+      userId: customerId,
+      role: 'CLIENT',
+      targetId: newBooking._id,
+      metadata: {
+        service: serviceId,
+        bookingDate: formattedBookingDate,
+        bookingTime,
+        extraTasks,
+        location,
+      },
+      username: req.user.name,
+      serviceProviderId: service.serviceProvider,
+    })
 
     res.status(201).json(newBooking);
   } catch (error) {
@@ -226,7 +241,21 @@ export const deleteBooking = async (
       res.status(404).json({ message: 'Booking not found' });
       return;
     }
-
+    await addAuditLogJob({
+      action: 'DELETE_BOOKING',
+      userId: deletedBooking.client,
+      role: 'CLIENT',
+      targetId: deletedBooking._id,
+      metadata: {
+        service: deletedBooking.service,
+        bookingDate: deletedBooking.bookingDate,
+        bookingTime: deletedBooking.bookingTime,
+        extraTasks: deletedBooking.extraTasks,
+        location: deletedBooking.location,
+      },
+      username: req.body.name,
+      serviceProviderId: deletedBooking.serviceProvider,
+    })
     // Return a success message
     res.status(200).json({ message: 'Booking deleted successfully' });
   } catch (error) {

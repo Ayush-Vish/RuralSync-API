@@ -50,6 +50,7 @@ export const sendLoginConfirmationEmail = async (user, role, req) => {
   });
 };
 
+
 export class ApiResponse  {
   constructor (res:Response , statusCode : number , message : string , data : unknown ) {
     res.status(statusCode).json({

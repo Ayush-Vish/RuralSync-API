@@ -2,6 +2,7 @@
 
 // import { Agent, Client, ServiceProvider } from '@org/db';
 import { Booking } from '@org/db';
+import { addAuditLogJob } from '@org/utils';
 
 
 
@@ -23,6 +24,19 @@ export const getAgentDashboard = async (req, res) => {
     const completedBookings = bookings.filter(b => b.status === 'Completed');
 
     // Send the data for the agent's dashboard
+    await addAuditLogJob({
+      action: 'FETCH_AGENT_DASHBOARD',
+      userId: agentId,
+      role: 'AGENT',
+      metadata: {
+        totalBookings: bookings.length,
+        pendingBookings: pendingBookings.length,
+        inProgressBookings: inProgressBookings.length,
+        completedBookings: completedBookings.length,
+      },
+      username: req.user.name,
+      serviceProviderId: bookings[0].serviceProvider
+    });
     res.status(200).json({
       totalBookings: bookings.length,
       pendingBookings,
@@ -55,7 +69,18 @@ export const addExtraTaskToBooking = async (req, res) => {
     booking.extraTasks.push({ description, extraPrice });
     booking.updatedAt = new Date();
     await booking.save();
-
+    await addAuditLogJob({
+      action: 'ADD_EXTRA_TASK',
+      userId: booking.agent,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata: {
+        description,
+        extraPrice,
+      },
+      username: req.user.name,
+      serviceProviderId: booking.serviceProvider
+    })
     res.status(201).json({
       message: 'Extra task added successfully',
       extraTasks: booking.extraTasks,
@@ -92,7 +117,18 @@ export const updateExtraTaskInBooking = async (req, res) => {
     if (extraPrice) booking.extraTasks[taskIndex].extraPrice = extraPrice;
     booking.updatedAt = new Date();
     await booking.save();
-
+    await addAuditLogJob({
+      action: 'UPDATE_EXTRA_TASK',
+      userId: booking.agent,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata: {
+        description,
+        extraPrice,
+      },
+      username: req.user.name,
+      serviceProviderId: booking.serviceProvider
+    })
     res.status(200).json({
       message: 'Extra task updated successfully',
       extraTasks: booking.extraTasks,
@@ -126,7 +162,17 @@ export const deleteExtraTaskFromBooking = async (req, res) => {
     // Remove the task at the specified index
     booking.extraTasks.splice(taskIndex, 1);
     await booking.save();
-
+    await addAuditLogJob({
+      action: 'DELETE_EXTRA_TASK',
+      userId: booking.agent,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata: {
+        taskIndex,
+      },
+      username: req.user.name,
+      serviceProviderId: booking.serviceProvider
+    })
     res.status(200).json({ message: 'Extra task deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete extra task' });
@@ -187,7 +233,17 @@ export const updateBookingToInProgress = async (req, res) => {
     booking.status = 'In Progress';
     // booking.startTime = new Date(); // Optional: track when work started
     await booking.save();
-
+    await addAuditLogJob({
+      action: 'UPDATE_BOOKING_STATUS',
+      userId: agentId,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata: {
+        status: 'In Progress',
+      },
+      username: req.user.name,
+      serviceProviderId: booking.serviceProvider
+    })
     res.status(200).json({
       message: 'Booking status updated to In Progress',
       booking
@@ -229,7 +285,17 @@ export const updateBookingToCompleted = async (req, res) => {
     booking.status = 'Completed';
     // booking.completionTime = new Date(); // Optional: track when work was completed
     await booking.save();
-
+    await addAuditLogJob({
+      action: 'UPDATE_BOOKING_STATUS',
+      userId: agentId,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata: {
+        status: 'Completed',
+      },
+      username: req.user.name,
+      serviceProviderId: booking.serviceProvider
+    })
     res.status(200).json({
       message: 'Booking status updated to Completed',
       booking
