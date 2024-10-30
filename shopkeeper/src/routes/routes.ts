@@ -1,21 +1,13 @@
 import express from 'express';
 import {
-  addNewService,
-  assignAgent,
-  assignAgentForaBooking,
-  availableAgents,
-  deleteAgent,
-  deleteService,
-  getAgent,
-  getAllAgents,
-  getAllServices,
-  getBooking,
-  getBookings,
+
   getOrgDetails,
   registerOrg,
-  searchServices,
-} from '../controllers/controller';
+} from '../controllers/org.sp.controller';
 import { isAuthorized, upload, verifyJWT } from '@org/utils';
+import { assignAgent, assignAgentForaBooking, availableAgents, deleteAgent, getAgent, getAllAgents } from '../controllers/agent.sp.controller';
+import { addNewService, deleteService, getAllServices, searchServices } from '../controllers/service.sp.controller';
+import { getBooking, getBookings } from '../controllers/booking.sp.controller';
 
 const router = express.Router();
 
