@@ -35,7 +35,7 @@ router.post('/send', async (req, res) => {
   try {
     // Send email using Nodemailer
     const info = await transporter.sendMail({
-      from: `Excited User <${process.env.GMAIL_USER}>`, // Sender email
+      from: `RuralSync <${process.env.GMAIL_USER}>`, // Sender email
       to: email,
       subject: subject,
       html: content, // HTML content (or use 'text' property for plain text)
