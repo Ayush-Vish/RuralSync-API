@@ -1,4 +1,4 @@
-import { Booking, RequestWithUser, Service } from '@org/db';
+import { Booking, RequestWithUser, Service,ServiceProvider } from '@org/db';
 import { ApiError } from '@org/utils';
 import { RequestId } from 'aws-sdk/clients/cloudwatchlogs';
 import { NextFunction, Request, RequestParamHandler, Response } from 'express';
@@ -187,5 +187,34 @@ export const getAllServices = async (req: Request, res: Response, next: NextFunc
     res.status(200).json(services);
   } catch (error) {
     next(error);
+  }
+};
+
+
+
+
+export const getAllServiceProviders = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const serviceProviders = await ServiceProvider.find()
+      .populate({
+        path: 'serviceCompany', 
+        select: 'name address phone description website logo location socialMedia businessHours isVerified'
+      })
+
+    if (serviceProviders.length === 0) {
+      res.status(200).json({
+        message: 'No service providers found',
+        data: []
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Service providers retrieved successfully',
+      data: serviceProviders
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
   }
 };
