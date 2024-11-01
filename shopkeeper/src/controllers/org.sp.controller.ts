@@ -63,6 +63,7 @@ const registerOrg = async (
       location,
       socialMedia,
       businessHours,
+      categories,
       isVerified = true,
     } = req.body;
     console.log('req.body', req.body);
@@ -114,6 +115,7 @@ const registerOrg = async (
       socialMedia: JSON.parse(socialMedia),
       businessHours: JSON.parse(businessHours),
       isVerified,
+      categories : JSON.parse(categories),
       ownerId: req.user.id,
     });
     console.log('4');

@@ -9,7 +9,7 @@ import {
 } from '@org/utils';
 import { Request, Response, NextFunction } from 'express';
 
-import { Agent, Client, RequestWithUser, ServiceProvider } from '@org/db';
+import { Agent, Client, Org, RequestWithUser, ServiceProvider } from '@org/db';
 import { sign } from 'jsonwebtoken';
 import bcrypt, { compare } from 'bcrypt';
 
@@ -103,11 +103,16 @@ export const agentRegister = async (
       return next(new ApiError('Agent already exists', 400));
     }
     console.log(req.body)
+    const serviceCompany = Org.findOne({
+      ownerId : serviceProviderId
+    })
+
     const newAgent = await Agent.create({...req.body, serviceProviderId, location:{
       type: "Point",
       coordinates: [req.body.location.longitude, req.body.location.latitude]
     }});
-   
+    
+    (await serviceCompany).agents.push(newAgent._id);
     return res.status(201).json({
       message: 'Agent created successfully',
       data: newAgent,

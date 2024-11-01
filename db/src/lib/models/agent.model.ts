@@ -22,9 +22,10 @@ const agentSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phoneNumber: {
     type: String,
-
-   
   },
+  serviceCompany:[{
+    type :String
+  }],
   address: {
     type: String,
   },

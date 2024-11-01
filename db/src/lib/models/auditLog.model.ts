@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-interface IAuditLog extends Document {
+export interface IAuditLog extends Document {
   userId: string;
   role: string;
   action: string;

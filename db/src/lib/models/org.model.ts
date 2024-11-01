@@ -29,6 +29,9 @@ const orgSchema = new Schema({
     Saturday: { start: String, end: String },
     Sunday: { start: String, end: String },
   },
+  categories:[
+    {type:String}
+  ],
   isVerified: { type: Boolean, default: false },
   rating: { type: Number, default: 0 },
   reviewCount: { type: Number, default: 0 },

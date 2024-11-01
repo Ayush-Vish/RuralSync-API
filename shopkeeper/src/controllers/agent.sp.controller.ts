@@ -1,5 +1,5 @@
 import { Agent, Booking, Org, RequestWithUser, Service } from '@org/db';
-import { addEmailJob, ApiError, ApiResponse } from '@org/utils';
+import { addAuditLogJob, addEmailJob, ApiError, ApiResponse } from '@org/utils';
 import { NextFunction, Request, Response } from 'express';
 
 const assignAgent = async (req, res, next) => {
@@ -26,6 +26,7 @@ const assignAgent = async (req, res, next) => {
       await service.save();
     }
 
+
     return res.status(200).json({ message: 'Agent assigned successfully' });
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));
@@ -33,13 +34,13 @@ const assignAgent = async (req, res, next) => {
 };
 
 const assignAgentForaBooking = async (
-  req: Request,
+  req: RequestWithUser,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { agentId, bookingId } = req.body;
-
+    const serviceProviderId = req.user.id;
     // Retrieve agent and check if exists
     const agent = await Agent.findById(agentId);
     if (!agent) {
@@ -120,12 +121,30 @@ const assignAgentForaBooking = async (
       console.warn('Client email not found or client not populated correctly');
     }
 
+    const serviceCompany = await Org.findOne({
+      ownerId : serviceProviderId
+    })
+    serviceCompany.clients.push(booking.client._id);
+
+
     // Update booking and agent status
     booking.agent = agentId;
     booking.status = 'Pending';
     agent.status = 'BUSY';
     await agent.save();
     await booking.save();
+    await addAuditLogJob({
+      action: 'ASSIGN_AGENT',
+      userId: agentId,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata:{
+        bookingId,
+        agentId,
+      },
+      username :agent.name,
+      serviceProviderId:agent.serviceProviderId
+    })
 
     // Send response
     return new ApiResponse(res, 201, 'Booking Created', {
