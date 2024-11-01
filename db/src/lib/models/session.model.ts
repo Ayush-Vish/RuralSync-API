@@ -24,4 +24,8 @@ export type User = {
 };
 export interface RequestWithUser extends Request  {
   user: User;
+  files: {
+    logo?: Express.Multer.File[];
+    images?: Express.Multer.File[];
+  };
 }

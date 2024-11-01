@@ -1,6 +1,8 @@
 // import { Client } from "@org/db";
 import bcrypt from 'bcrypt';
 import { Agent, Client, ServiceProvider } from '@org/db';
+
+import { uploadFileToS3 } from '@org/utils';
 // Get Customer Profile
 export const getCustomerProfile = async (req, res) => {
   try {
@@ -24,35 +26,119 @@ export const getCustomerProfile = async (req, res) => {
 
 
 
-
-// Update Customer Profile
+/**
+ * Update client profile
+ * @route PUT /api/clients/profile
+ */
 export const updateCustomerProfile = async (req, res) => {
   try {
-    const customerId = req.user.id;  
-    const { name, email, phoneNumber, profilePicture } = req.body;
+    const clientId = req.user.id;
+    const { name, email, phoneNumber, address, profile } = req.body;
 
-    // Optional validation
-    // if (!name || !email || !phoneNumber) {
-    //   return res.status(400).json({ message: 'Name, email, and phone number are required' });
-    // }
 
-    // Find the customer and update
-    const customer = await Client.findByIdAndUpdate(customerId, {
-      name,
-      email,
-      phoneNumber,
-      'profile.profilePicture': profilePicture 
-    }, { new: true });
+     // Initialize update data
+     const updateData = {
+      name: name ,
+      email: email,
+      phoneNumber: phoneNumber ,
+      address: {
+        street: address?.street,
+        city: address?.city ,
+        state: address?.state ,
+        postalCode: address?.postalCode ,
+        country: address?.country ,
+      },
+      profile: {
+        bio: profile?.bio ,
+        profilePicture: profile?.profilePicture,
+      },
+      updatedAt: new Date(),
+    };
 
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+    // Check email uniqueness if being updated
+    if (email) {
+      const existingClient = await Client.findOne({ 
+        email, 
+        _id: { $ne: clientId } 
+      });
+      
+      if (existingClient) {
+        return res.status(400).json({ 
+          message: 'Email is already in use' 
+        });
+      }
+    }
+    
+
+    // Add fields to updateData only if they exist in req.body
+    if (name) updateData.name = name;
+    if (phoneNumber) updateData.phoneNumber = phoneNumber;
+
+    // Handle address updates safely if provided
+    if (address) {
+      updateData.address = {
+        street: address?.street,
+        city: address?.city ,
+        state: address?.state ,
+        postalCode: address?.postalCode ,
+        country: address?.country ,
+      };
+      if (address.street) updateData.address.street = address.street;
+      if (address.city) updateData.address.city = address.city;
+      if (address.state) updateData.address.state = address.state;
+      if (address.postalCode) updateData.address.postalCode = address.postalCode;
+      if (address.country) updateData.address.country = address.country;
+    }
+   
+
+    // Handle profile updates safely if provided
+    if (profile) {
+      updateData.profile = {
+        bio: profile?.bio ,
+        profilePicture: profile?.profilePicture,
+      };
+      if (profile.bio) updateData.profile.bio = profile.bio;
     }
 
-    res.status(200).json(customer);
+     // Handle profile picture upload if provided
+     if (req.files && req.files.profilePicture) {
+      const profilePictureFile = req.files.profilePicture;
+      const uploadResult = await uploadFileToS3(profilePictureFile);
+      updateData.profile.profilePicture = uploadResult.url;
+    }
+
+    // Update client
+    const client = await Client.findByIdAndUpdate(
+      clientId,
+      { $set: updateData },
+      { 
+        new: true,
+        runValidators: true,
+        select: '-password -refreshToken -ip'
+      }
+    );
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      data: client
+    });
+    
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Update profile error:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Invalid input data', 
+        errors: error.errors 
+      });
+    }
+    res.status(500).json({ message: 'Failed to update profile' });
   }
 };
+
 
 
 

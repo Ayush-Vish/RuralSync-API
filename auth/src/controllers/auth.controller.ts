@@ -1,7 +1,11 @@
 import {
+  addAuditLogJob,
+  addEmailJob,
   ApiError,
   cookieOptions,
   generateAccessAndRefreshToken,
+  getDeviceAndLocationInfo,
+  sendLoginConfirmationEmail,
 } from '@org/utils';
 import { Request, Response, NextFunction } from 'express';
 
@@ -99,7 +103,10 @@ export const agentRegister = async (
       return next(new ApiError('Agent already exists', 400));
     }
     console.log(req.body)
-    const newAgent = await Agent.create({...req.body, serviceProviderId});
+    const newAgent = await Agent.create({...req.body, serviceProviderId, location:{
+      type: "Point",
+      coordinates: [req.body.location.longitude, req.body.location.latitude]
+    }});
    
     return res.status(201).json({
       message: 'Agent created successfully',
@@ -131,13 +138,13 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+
 const loginServiceProvider = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    console.log('Login Service Provider');
     const { email, password } = req.body;
     if (!email || !password) {
       return next(new ApiError('Email and password are required', 400));
@@ -147,7 +154,6 @@ const loginServiceProvider = async (
       return next(new ApiError('Invalid credentials', 400));
     }
 
-    // Validate password
     const isMatch = await bcrypt.compare(password, serviceProvider.password);
     if (!isMatch) {
       return next(new ApiError('Invalid credentials', 400));
@@ -159,6 +165,8 @@ const loginServiceProvider = async (
     );
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
+    await sendLoginConfirmationEmail(serviceProvider, 'SERVICE_PROVIDER', req);
+    
 
     return res.status(200).json({
       message: 'Login successful',
@@ -228,6 +236,7 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
     
     const agentResponse = agent.toObject();
     delete agentResponse.password;
+    await sendLoginConfirmationEmail(agent, 'AGENT', req);
 
     // Set cookies and send response
     return res
@@ -247,7 +256,6 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
       message: error.message,
       stack: error.stack
     });
-
     if (error.name === 'BcryptError') {
       return next(new ApiError('Password comparison failed', 500));
     }
@@ -281,7 +289,8 @@ const loginClient = async (req: Request, res: Response, next: NextFunction) => {
     );
     res.cookie('accessToken', accessToken, cookieOptions);
     res.cookie('refreshToken', refreshToken, cookieOptions);
-
+    await sendLoginConfirmationEmail(client, 'CLIENT', req);
+    
     return res.status(200).json({
       message: 'Login successful',
       data: client,

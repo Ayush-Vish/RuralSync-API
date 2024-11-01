@@ -1,0 +1,26 @@
+{
+  "name": "audit-log",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "audit-log/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "audit-log:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "audit-log:build:development"
+        },
+        "production": {
+          "buildTarget": "audit-log:build:production"
+        }
+      }
+    }
+  }
+}

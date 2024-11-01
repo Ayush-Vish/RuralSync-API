@@ -58,7 +58,6 @@ export const verifyJWT = async (
     }
 
     const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
-    // Attach user details to the request object
     req.user = {
       id: user.id,
       email: user.email,
@@ -85,18 +84,6 @@ export const isAuthorized = (allowedRoles: UserRole[]) => {
     }
     next();
   };
-};
-
-// Multer configuration for file upload
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 1024 * 1024 * 5, // Limit to 5MB
-  },
-});
-
-export {
-  upload
 };
 
 
