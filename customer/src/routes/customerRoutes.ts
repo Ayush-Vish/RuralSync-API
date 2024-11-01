@@ -13,7 +13,7 @@ const router = express.Router();
 router.get('/customers/profile',verifyJWT, getCustomerProfile);
 
 
-router.put('/customers/profile',verifyJWT, updateCustomerProfile);
+router.put('/customers/profile-update',verifyJWT, updateCustomerProfile);
 
 
 router.patch('/customers/password',verifyJWT, changePassword);

@@ -4,6 +4,7 @@ import {
   getCustomerBookings,
   deleteBooking,
   getAllServices,
+  getAllServiceProviders,
   // getServices,
 } from '../controllers/booking';
 // import { authenticateUser } from '../middleware/authMiddleware.js';
@@ -23,5 +24,6 @@ router.get('/bookings', verifyJWT,isAuthorized(['CLIENT']),getCustomerBookings);
 router.delete('/bookings/:id', verifyJWT,isAuthorized(['CLIENT']),deleteBooking);
 
 router.get('/services',verifyJWT,getAllServices)
+router.get('/service-provider',verifyJWT,getAllServiceProviders);
 
 export default router;
