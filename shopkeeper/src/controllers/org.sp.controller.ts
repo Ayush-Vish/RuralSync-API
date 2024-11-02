@@ -111,11 +111,11 @@ const registerOrg = async (
       website,
       logo: logoUrl,
       images: imageUrls,
-      location : JSON.parse(location),
-      socialMedia,
-      businessHours,
+      location: JSON.parse(location),
+      socialMedia: JSON.parse(socialMedia),
+      businessHours: JSON.parse(businessHours),
       isVerified,
-      categories,
+      categories : JSON.parse(categories),
       ownerId: req.user.id,
     });
     console.log('4');
