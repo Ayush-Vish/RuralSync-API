@@ -38,7 +38,6 @@ const orgSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
-
 const Org = mongoose.model('ServiceCompany', orgSchema);
 
 export { Org };

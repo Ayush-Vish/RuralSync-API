@@ -96,10 +96,12 @@ const addNewService = async (
     await newService.save();
 
     // Update Organization with new service
-    await Org.findByIdAndUpdate(org._id, {
-      $push: { services: newService._id },
-    });
-
+    const serviceCompany = await Org.findOne({
+      ownerId : ownerId
+    })
+    serviceCompany.services.push(newService._id);
+    await serviceCompany.save();
+    
     return res
       .status(201)
       .json({ message: 'Service added successfully', data: newService });

@@ -145,17 +145,13 @@ const getOrgDetails = async (
     if (!org) {
       return next(new ApiError('Organization not found', 404));
     }
+    
     console.log(org);
     return res.status(200).json(org);
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
 };
-
-
-
-
-
 export {
   getServiceProviderById,
   registerOrg,
