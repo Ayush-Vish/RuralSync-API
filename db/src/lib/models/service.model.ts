@@ -24,7 +24,7 @@ const serviceSchema = new Schema({
   estimatedDuration: { type: String, required: true },
   category: { type: String, required: true },
   serviceProvider: { type: Schema.Types.ObjectId, ref: 'ServiceProvider', required: true },
-  serviceCompany: { type: Schema.Types.ObjectId, ref: 'Org', required: true },
+  serviceCompany: { type: Schema.Types.ObjectId, ref: 'ServiceCompany', required: true },
   availability: {
     type: [{ day: String, startTime: String, endTime: String }],
     required: true,
