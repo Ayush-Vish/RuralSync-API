@@ -145,7 +145,13 @@ const getOrgDetails = async (
     }
     
     console.log(org);
-    return res.status(200).json(org);
+    return res.status(200).json({
+      org: {
+        ...org , agentsCount:org.agents.length, servicesCount:org.services.length,
+        customersCount:org.clients.length
+          
+      }
+    });
   } catch (error) {
     return next(new ApiError('An error occurred: ' + error.message, 500));
   }
