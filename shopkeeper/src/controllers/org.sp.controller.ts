@@ -66,7 +66,7 @@ const registerOrg = async (
       categories,
       isVerified = true,
     } = req.body;
-    console.log('req.body', req.body);
+    // console.log('req.body', req.body);
     if (!name || !address || !phone) {
       return next(
         new ApiError('Organization name, address, and phone are required', 400)
@@ -111,11 +111,11 @@ const registerOrg = async (
       website,
       logo: logoUrl,
       images: imageUrls,
-      location: JSON.parse(location),
-      socialMedia: JSON.parse(socialMedia),
-      businessHours: JSON.parse(businessHours),
+      location,
+      socialMedia,
+      businessHours,
       isVerified,
-      categories : JSON.parse(categories),
+      categories,
       ownerId: req.user.id,
     });
     console.log('4');

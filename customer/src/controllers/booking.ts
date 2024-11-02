@@ -169,48 +169,48 @@ export const createBooking = async (
 
 
     
-    // Send email to service provider
-    if (service.serviceProvider && service.serviceProvider.email) {
-      await addEmailJob({
-        email: service.serviceProvider.email,
-        subject: 'New Booking Request',
-        content: `
-          <p>Dear ${service.serviceProvider.name},</p>
-          <p>You have received a new booking request. Here are the details:</p>
-          <p><strong>Booking ID:</strong> ${newBooking._id}</p>
-          <p><strong>Service:</strong> ${service.name}</p>
-          <p><strong>Customer:</strong> ${customer.name}</p>
-          <p><strong>Customer Email:</strong> ${customer.email}</p>
-          <p><strong>Booking Date:</strong> ${formattedBookingDate}</p>
-          <p><strong>Booking Time:</strong> ${bookingTime}</p>
-          ${
-            location
-              ? `<p><strong>Location:</strong> ${location.coordinates.join(
-                  ', '
-                )}</p>`
-              : ''
-          }
-          ${
-            extraTasks && extraTasks.length > 0
-              ? `
-            <p><strong>Extra Tasks:</strong></p>
-            <ul>
-              ${extraTasks
-                .map(
-                  (task) => `
-                <li>${task.description} - $${task.extraPrice}</li>
-              `
-                )
-                .join('')}
-            </ul>
-          `
-              : ''
-          }
-          <p>Please review and confirm this booking as soon as possible.</p>
-          <p>Best regards,<br/>Service Provider</p>
-        `,
-      });
-    }
+    // // Send email to service provider
+    // if (service.serviceProvider && service.serviceProvider.email) {
+    //   await addEmailJob({
+    //     email: service.serviceProvider.email,
+    //     subject: 'New Booking Request',
+    //     content: `
+    //       <p>Dear ${service.serviceProvider.name},</p>
+    //       <p>You have received a new booking request. Here are the details:</p>
+    //       <p><strong>Booking ID:</strong> ${newBooking._id}</p>
+    //       <p><strong>Service:</strong> ${service.name}</p>
+    //       <p><strong>Customer:</strong> ${customer.name}</p>
+    //       <p><strong>Customer Email:</strong> ${customer.email}</p>
+    //       <p><strong>Booking Date:</strong> ${formattedBookingDate}</p>
+    //       <p><strong>Booking Time:</strong> ${bookingTime}</p>
+    //       ${
+    //         location
+    //           ? `<p><strong>Location:</strong> ${location.coordinates.join(
+    //               ', '
+    //             )}</p>`
+    //           : ''
+    //       }
+    //       ${
+    //         extraTasks && extraTasks.length > 0
+    //           ? `
+    //         <p><strong>Extra Tasks:</strong></p>
+    //         <ul>
+    //           ${extraTasks
+    //             .map(
+    //               (task) => `
+    //             <li>${task.description} - $${task.extraPrice}</li>
+    //           `
+    //             )
+    //             .join('')}
+    //         </ul>
+    //       `
+    //           : ''
+    //       }
+    //       <p>Please review and confirm this booking as soon as possible.</p>
+    //       <p>Best regards,<br/>Service Provider</p>
+    //     `,
+    //   });
+    // }
 
     res.status(201).json(newBooking);
   } catch (error) {
@@ -283,20 +283,20 @@ export const deleteBooking = async (
      const customer = await req.user;
 
      // Send email to the customer notifying them of the cancellation
-     await addEmailJob({
-       email: customer.email,
-       subject: 'Booking Cancellation',
-       content: `
-         <p>Dear ${customer.name},</p>
-         <p>Your booking has been successfully canceled. Here are the details:</p>
-         <p><strong>Booking ID:</strong> ${deletedBooking._id}</p>
-         <p><strong>Service:</strong> ${deletedBooking.service.name}</p>
-         <p><strong>Booking Date:</strong> ${moment(deletedBooking.bookingDate).format('YYYY-MM-DD')}</p>
-         <p><strong>Booking Time:</strong> ${deletedBooking.bookingTime}</p>
-         <p>We are sorry for any inconvenience this may have caused.</p>
-         <p>Best regards,<br/>Service Provider</p>
-       `,
-     });
+    //  await addEmailJob({
+    //    email: customer.email,
+    //    subject: 'Booking Cancellation',
+    //    content: `
+    //      <p>Dear ${customer.name},</p>
+    //      <p>Your booking has been successfully canceled. Here are the details:</p>
+    //      <p><strong>Booking ID:</strong> ${deletedBooking._id}</p>
+    //      <p><strong>Service:</strong> ${deletedBooking.service.name}</p>
+    //      <p><strong>Booking Date:</strong> ${moment(deletedBooking.bookingDate).format('YYYY-MM-DD')}</p>
+    //      <p><strong>Booking Time:</strong> ${deletedBooking.bookingTime}</p>
+    //      <p>We are sorry for any inconvenience this may have caused.</p>
+    //      <p>Best regards,<br/>Service Provider</p>
+    //    `,
+    //  });
 
     // Return a success message
     res.status(200).json({ message: 'Booking deleted successfully' });
@@ -313,10 +313,10 @@ export const getAllServices = async (
 ) => {
   try {
     const services = await Service.find({})
-      .populate('client', 'name email') // Populate customer details (optional)
-      .populate('service', 'name description') // Populate service details (optional)
-      .populate('agent', 'name email') // Populate agent details (optional)
-      .exec();
+      // .populate('client', 'name email') // Populate customer details (optional)
+      // .populate('ServiceProvider', 'name email') // Populate provider details
+      // .populate('Org','name categories')
+      // .exec();
     if (!services || services.length === 0) {
       return next(new ApiError('No services found', 404));
     }
@@ -335,25 +335,24 @@ export const getAllServices = async (
     );
   }
 };
-
 export const getAllServiceProviders = async (
-  req: Request,
-  res: Response,
+  req: Request, 
+  res: Response, 
   next: NextFunction
 ) => {
   try {
-    const serviceProviders = await ServiceProvider.find().populate({
-      path: 'serviceCompany',
-      select:
-        'name address phone description website logo location socialMedia businessHours isVerified',
-    });
+    const serviceProviders = await ServiceProvider.find({})
+      .populate('serviceCompany','name categories')
+      .exec();
+
+
+    console.log("serviceProviders", serviceProviders);
 
     if (serviceProviders.length === 0) {
-      res.status(200).json({
+      return res.status(200).json({
         message: 'No service providers found',
         data: [],
       });
-      return;
     }
 
     res.status(200).json({
@@ -365,3 +364,5 @@ export const getAllServiceProviders = async (
     res.status(500).json({ message: error.message });
   }
 };
+
+
