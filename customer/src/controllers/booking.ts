@@ -341,9 +341,10 @@ export const getAllServiceProviders = async (
   next: NextFunction
 ) => {
   try {
-    const serviceProviders = await ServiceProvider.find({})
-      .populate('serviceCompany','name categories')
-      .exec();
+    const serviceProviders = await ServiceProvider.find()
+                                    .populate({path: 'serviceCompany', select: 'name'})
+                                    .populate({path:"serviceCompany" , select :"categories"});
+
 
 
     console.log("serviceProviders", serviceProviders);
