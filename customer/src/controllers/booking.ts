@@ -1,5 +1,5 @@
 import { Booking, RequestWithUser, Service, ServiceProvider } from '@org/db';
-import { ApiError, addEmailJob } from '@org/utils';
+import { ApiError, addAuditLogJob, addEmailJob } from '@org/utils';
 import { RequestId } from 'aws-sdk/clients/cloudwatchlogs';
 import { NextFunction, Request, RequestParamHandler, Response } from 'express';
 import moment from 'moment';
@@ -21,7 +21,7 @@ type Location = {
 };
 
 type NewBookingData = {
-  customer: mongoose.Types.ObjectId;
+  client: mongoose.Types.ObjectId;
   service: mongoose.Types.ObjectId;
   bookingDate: Date;
   bookingTime: string;
@@ -79,18 +79,13 @@ export const createBooking = async (
         return;
       }
     }
-    // Check if the service exists
-    const service = await Service.findById(serviceId)
-    .populate(
-      'serviceProvider','name,email'
-    );
 
+    // Check if the service exists
+    const service = await Service.findById(serviceId);
     if (!service) {
       res.status(404).json({ message: 'Service not found' });
       return;
     }
-
-    // At this point, 'service' is populated and can be used
 
     // Validate and format the date using moment.js
     const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format(
@@ -105,10 +100,10 @@ export const createBooking = async (
 
     // Build the booking object
     const newBookingData: NewBookingData = {
-      customer: customerId as any,
+      client: customerId as any,
       service: serviceId as any,
       bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
-      bookingTime: bookingTime, // Save time as string
+      bookingTime: bookingTime, // Save time as string,
     };
 
     // If extra tasks are provided, add them to the booking
@@ -125,92 +120,62 @@ export const createBooking = async (
     }
 
     // Create the new booking
-    const newBooking = await Booking.create(newBookingData);
-
-    // Fetch customer details
-    const customer = await req.user;
-
-    // Send email to customer
-    await addEmailJob({
-      email: customer.email,
-      subject: 'Booking Confirmation',
-      content: `
-    <p>Dear ${customer.name},</p>
-    <p>Thank you for your booking. Here are your booking details:</p>
-    <p><strong>Booking ID:</strong> ${newBooking._id}</p>
-    <p><strong>Service:</strong> ${service.name}</p>
-    <p><strong>Booking Date:</strong> ${formattedBookingDate}</p>
-    <p><strong>Booking Time:</strong> ${bookingTime}</p>
-    ${
-      location
-        ? `<p><strong>Location:</strong> ${location.coordinates.join(', ')}</p>`
-        : ''
-    }
-    ${
-      extraTasks && extraTasks.length > 0
-        ? `
-      <p><strong>Extra Tasks:</strong></p>
-      <ul>
-        ${extraTasks
-          .map(
-            (task) => `
-          <li>${task.description} - $${task.extraPrice}</li>
-        `
-          )
-          .join('')}
-      </ul>
-    `
-        : ''
-    }
-    <p>We will confirm your booking shortly.</p>
-    <p>Best regards,<br/>Service Provider</p>
-  `,
+    const newBooking = await Booking.create({
+      ...newBookingData,
+      serviceProvider: service.serviceProvider,
     });
+    const populatedBooking = await Booking.findById(newBooking._id)
+      .populate('service', 'name description')
+      .populate('client', 'name email')
+      .populate('serviceProvider', 'name email')
+      .exec();
+    console.log('PopulatedBooking ', populatedBooking);
+    await populatedBooking.save();
 
+    // if (populatedBooking) {
+    //   // Extract necessary information
+    //   const clientEmail = (populatedBooking.client as any).email;
+    //   const clientName = (populatedBooking.client as any).name;
+    //   const serviceName = (populatedBooking.service as any).name;
+    //   const bookingDate = (populatedBooking.bookingDate as any).toDateString();
+    //   const bookingTime = populatedBooking.bookingTime as any;
+    //   const serviceProviderEmail = (populatedBooking.serviceProvider as any)
+    //     .email;
+    //   const serviceProviderName = (populatedBooking.serviceProvider as any)
+    //     .name;
 
-    
-    // // Send email to service provider
-    // if (service.serviceProvider && service.serviceProvider.email) {
+    //   // Send email to client
+    //   console.log("Client ema", clientEmail)
     //   await addEmailJob({
-    //     email: service.serviceProvider.email,
-    //     subject: 'New Booking Request',
-    //     content: `
-    //       <p>Dear ${service.serviceProvider.name},</p>
-    //       <p>You have received a new booking request. Here are the details:</p>
-    //       <p><strong>Booking ID:</strong> ${newBooking._id}</p>
-    //       <p><strong>Service:</strong> ${service.name}</p>
-    //       <p><strong>Customer:</strong> ${customer.name}</p>
-    //       <p><strong>Customer Email:</strong> ${customer.email}</p>
-    //       <p><strong>Booking Date:</strong> ${formattedBookingDate}</p>
-    //       <p><strong>Booking Time:</strong> ${bookingTime}</p>
-    //       ${
-    //         location
-    //           ? `<p><strong>Location:</strong> ${location.coordinates.join(
-    //               ', '
-    //             )}</p>`
-    //           : ''
-    //       }
-    //       ${
-    //         extraTasks && extraTasks.length > 0
-    //           ? `
-    //         <p><strong>Extra Tasks:</strong></p>
-    //         <ul>
-    //           ${extraTasks
-    //             .map(
-    //               (task) => `
-    //             <li>${task.description} - $${task.extraPrice}</li>
-    //           `
-    //             )
-    //             .join('')}
-    //         </ul>
-    //       `
-    //           : ''
-    //       }
-    //       <p>Please review and confirm this booking as soon as possible.</p>
-    //       <p>Best regards,<br/>Service Provider</p>
-    //     `,
+    //     email: clientEmail,
+    //     subject: 'Booking Confirmation',
+    //     content: `Hello ${clientName},\n\nYour booking for ${serviceName} on ${bookingDate} at ${bookingTime} has been confirmed.\n\nThank you for choosing our service.\n\nBest,\nService Provider`,
     //   });
+    //   console.log("Client ema", serviceProviderEmail);
+    //   // Send email to service provider
+    //   await addEmailJob({
+    //     email: serviceProviderEmail,
+    //     subject: 'New Booking',
+    //     content: `Hello ${serviceProviderName},\n\nYou have a new booking for ${serviceName} on ${bookingDate} at ${bookingTime}.\n\nBest,\nService`,
+    //   });
+    // } else {
+    //   res.status(404).json({ message: 'Failed to Send email' });
     // }
+    await addAuditLogJob({
+      action: 'CREATE_BOOKING',
+      userId: customerId,
+      role: 'CLIENT',
+      targetId: newBooking._id,
+      metadata: {
+        service: serviceId,
+        bookingDate: formattedBookingDate,
+        bookingTime,
+        extraTasks,
+        location,
+      },
+      username: req.user.name,
+      serviceProviderId: service.serviceProvider,
+    })
 
     res.status(201).json(newBooking);
   } catch (error) {
@@ -218,7 +183,6 @@ export const createBooking = async (
     res.status(500).json({ message: error.message });
   }
 };
-
 // Get Customer Bookings
 export const getCustomerBookings = async (
   req: RequestWithUser,

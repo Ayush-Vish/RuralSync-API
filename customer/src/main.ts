@@ -9,6 +9,7 @@ import express from 'express';
 import * as path from 'path';
 import customerRoutes from './routes/customerRoutes'
 import bookingRoutes from './routes/bookingRoute'
+import reviewRoutes from './routes/reviewRoutes'
 import { connectToDb } from '@org/db';
 
 const app = express();
@@ -28,7 +29,7 @@ app.use(express.json());
 
 app.use('/client' ,customerRoutes);
 app.use('/client/booking',bookingRoutes);
-app.use('/client')
+app.use('/client',reviewRoutes)
 
 connectToDb()
 const port = process.env.CUSTOMER_PORT || 5002;
