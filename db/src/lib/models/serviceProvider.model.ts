@@ -12,6 +12,7 @@ const serviceProviderSchema = new Schema({
   phone: { type: String },
   address: { type: String },
   ip: { type: String },
+  price:{type: Number},
   serviceCompany: {
     type:mongoose.Schema.Types.ObjectId,
     ref: 'ServiceCompany',

@@ -342,8 +342,13 @@ export const getAllServiceProviders = async (
 ) => {
   try {
     const serviceProviders = await ServiceProvider.find()
-                                    .populate({path: 'serviceCompany', select: 'name'})
-                                    .populate({path:"serviceCompany" , select :"categories"});
+  .populate({
+    path: 'serviceCompany',
+    select: 'name categories description images rating' // Combine all fields into one select
+  });
+
+
+
 
 
 

@@ -28,6 +28,7 @@ app.use(express.json());
 
 app.use('/client' ,customerRoutes);
 app.use('/client/booking',bookingRoutes);
+app.use('/client')
 
 connectToDb()
 const port = process.env.CUSTOMER_PORT || 5002;
