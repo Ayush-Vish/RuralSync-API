@@ -183,8 +183,6 @@ export const createBooking = async (
     res.status(500).json({ message: error.message });
   }
 };
-
-// Get Customer Bookings
 export const getCustomerBookings = async (
   req: RequestWithUser,
   res: Response

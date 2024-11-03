@@ -103,7 +103,7 @@ export const agentRegister = async (
       return next(new ApiError('Agent already exists', 400));
     }
     console.log(req.body)
-    const serviceCompany = Org.findOne({
+    const serviceCompany = await Org.findOne({
       ownerId : serviceProviderId
     })
 
@@ -113,6 +113,8 @@ export const agentRegister = async (
     }});
     
     (await serviceCompany).agents.push(newAgent._id);
+    await serviceCompany.save();
+    
     return res.status(201).json({
       message: 'Agent created successfully',
       data: newAgent,

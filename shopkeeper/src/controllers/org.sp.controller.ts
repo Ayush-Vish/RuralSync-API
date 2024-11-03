@@ -146,10 +146,24 @@ const getOrgDetails = async (
     
     console.log(org);
     return res.status(200).json({
-      org: {
-        ...org , agentsCount:org.agents.length, servicesCount:org.services.length,
-        customersCount:org.clients.length
-          
+      org:{
+        name: org.name,
+        address: org.address,
+        phone: org.phone,
+        description: org.description,
+        website: org.website,
+        logo: org.logo,
+        images: org.images,
+        location: org.location,
+        socialMedia: org.socialMedia,
+        businessHours: org.businessHours,
+        isVerified: org.isVerified,
+        categories: org.categories,
+        agentCount: org.agents.length,
+        serviceCount: org.services.length,
+        clients:org.clients.length,
+        createdAt: org.createdAt,
+        updatedAt: org.updatedAt,
       }
     });
   } catch (error) {
