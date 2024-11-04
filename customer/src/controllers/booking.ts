@@ -49,6 +49,8 @@ export const createBooking = async (
       location?: Location;
     } = req.body;
 
+    
+
     // Validate required fields
     if (!serviceId || !bookingDate || !bookingTime) {
       res.status(400).json({ message: 'All fields are required' });
@@ -309,7 +311,8 @@ export const getAllServiceProviders = async (
   .populate({
     path: 'serviceCompany',
     select: 'name categories description images rating' // Combine all fields into one select
-  });
+  })
+  
 
 
 
@@ -336,3 +339,133 @@ export const getAllServiceProviders = async (
 };
 
 
+
+
+
+
+
+//PUBLIC ROUTES MADE BY  HARSH TO DO BOOKING WITHOUT AUTHENITCAITON AND GET BOOKINGS
+export const createBooking2 = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const customerId = req.body.clientId; // Take customer ID from req.userId or req.body.clientId
+    if (!customerId) {
+      res.status(400).json({ message: 'Client ID is required' });
+      return;
+    }
+
+    const {
+      serviceId,
+      bookingDate,
+      bookingTime,
+      extraTasks,
+      location,
+    }: {
+      serviceId: string;
+      bookingDate: string;
+      bookingTime: string;
+      extraTasks?: ExtraTask[];
+      location?: Location;
+    } = req.body;
+
+    // Validate required fields
+    if (!serviceId || !bookingDate || !bookingTime) {
+      res.status(400).json({ message: 'All fields are required' });
+      return;
+    }
+
+    // Validate booking time (e.g., "10:00 AM", "2:30 PM")
+    const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
+    if (!timeRegex.test(bookingTime)) {
+      res.status(400).json({ message: 'Invalid booking time format. Use format like "10:00 AM"' });
+      return;
+    }
+
+    // Validate location if provided
+    if (location) {
+      if (
+        !location.type ||
+        location.type !== 'Point' ||
+        !Array.isArray(location.coordinates) ||
+        location.coordinates.length !== 2
+      ) {
+        res.status(400).json({
+          message: 'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
+        });
+        return;
+      }
+    }
+
+    // Check if the service exists
+    const service = await Service.findById(serviceId);
+    if (!service) {
+      res.status(404).json({ message: 'Service not found' });
+      return;
+    }
+
+    // Validate and format the date using moment.js
+    const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format('YYYY-MM-DD');
+    if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
+      res.status(400).json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
+      return;
+    }
+
+    // Build the booking object
+    const newBookingData: NewBookingData = {
+      client: customerId as any,
+      service: serviceId as any,
+      bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`),
+      bookingTime: bookingTime,
+    };
+
+    // If extra tasks are provided, add them to the booking
+    if (extraTasks && extraTasks.length > 0) {
+      newBookingData.extraTasks = extraTasks.map((task) => ({
+        description: task.description,
+        extraPrice: task.extraPrice,
+      }));
+    }
+
+    // If location is provided, add it to the booking
+    if (location) {
+      newBookingData.location = location;
+    }
+
+    // Create the new booking
+    const newBooking = await Booking.create({ ...newBookingData, serviceProvider: service.serviceProvider });
+
+    res.status(201).json(newBooking);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+export const getCustomerBookings2 = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const customerId = req.params.clientId; // Extract customer ID from path parameters
+
+    // Validate that the customerId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      res.status(400).json({ message: 'Invalid customer ID' });
+      return;
+    }
+
+    // Fetch all bookings associated with the customer
+    const customerBookings = await Booking.find({ client: customerId })
+      .sort({ bookingDate: -1 }); // Sort bookings by most recent first
+
+    // Check if bookings are found
+    if (customerBookings.length === 0) {
+      res.status(404).json({ message: 'No bookings found for this customer' });
+      return;
+    }
+
+    // Return the bookings
+    res.status(200).json(customerBookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};

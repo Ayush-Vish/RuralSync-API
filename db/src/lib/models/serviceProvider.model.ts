@@ -29,6 +29,7 @@ const serviceProviderSchema = new Schema({
   clients: [{ type: Schema.Types.ObjectId, ref: 'Client' }],
   agents: [{ type: Schema.Types.ObjectId, ref: 'Agent' }],
   booking: [{ type: Schema.Types.ObjectId, ref: 'Booking' }],
+  service:[{type:Schema.Types.ObjectId,ref :'Service'}],
   serviceItems: [
     {
       type: mongoose.Schema.Types.ObjectId,
