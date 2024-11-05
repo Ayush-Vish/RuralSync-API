@@ -300,22 +300,33 @@ export const getAllServices = async (
     );
   }
 };
+
+
 export const getAllServiceProviders = async (
-  req: Request, 
-  res: Response, 
-  next: NextFunction
+  req, res, next
 ) => {
   try {
     const serviceProviders = await ServiceProvider.find({})
-  .populate({
-    path: 'serviceCompany',
-    select: 'name categories description images rating' // Combine all fields into one select
-  })
-  
-
-
-
-
+      .populate({
+        path: 'serviceCompany',
+        select: 'name categories description images rating'
+      })
+      .populate({
+        path: 'clients',
+        select: 'name email phoneNumber address'
+      })
+      .populate({
+        path: 'agents',
+        select: 'name email address phoneNumber'
+      })
+      .populate({
+        path: 'booking',
+        select: 'client service bookingDate status totalPrice'
+      })
+      .populate({
+        path: 'service',
+        select: 'name description basePrice category'
+      })
 
 
     console.log("serviceProviders", serviceProviders);
@@ -336,8 +347,6 @@ export const getAllServiceProviders = async (
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 
 

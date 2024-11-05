@@ -283,7 +283,7 @@ export const updateBookingToCompleted = async (req, res) => {
 
     // Update the status
     booking.status = 'Completed';
-    // booking.completionTime = new Date(); // Optional: track when work was completed
+    booking.completionTime = new Date(); // Optional: track when work was completed
     await booking.save();
     await addAuditLogJob({
       action: 'UPDATE_BOOKING_STATUS',
@@ -310,3 +310,72 @@ export const updateBookingToCompleted = async (req, res) => {
 };
 
 
+// import { Booking } from '../models/Booking.js';
+
+/**
+ * Controller to get a booking by its ID.
+ */
+export const getBookingById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id)
+      .populate('client', 'name')
+      .populate('serviceProvider', 'name')
+      .populate('service', 'name')
+      .populate('agent', 'name');
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    res.status(200).json({ booking });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to get booking',
+      message: error.message,
+    });
+  }
+};
+
+
+/**
+ * Controller to change the status of a booking.
+ */
+export const changeBookingStatus = async (req, res) => {
+  try {
+    const { bookingId, status } = req.body;
+
+    const validStatuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'Not Assigned'];
+
+    // Validate provided status
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+
+    // Find the booking by ID and update status
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    booking.status = status;
+
+    // Set completion time if status is "Completed"
+    if (status === 'Completed') {
+      booking.completionTime = new Date();
+    }
+
+    await booking.save();
+
+    res.status(200).json({
+      message: `Booking status updated to ${status}`,
+      booking,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to update booking status',
+      message: error.message,
+    });
+  }
+};

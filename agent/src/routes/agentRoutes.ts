@@ -4,7 +4,7 @@ const router = express.Router();
 
 import {isAuthorized, verifyJWT} from '@org/utils'
 import multer from 'multer'
-import {getAgentDashboard,updateExtraTaskInBooking,deleteExtraTaskFromBooking,getExtraTasksForBooking,addExtraTaskToBooking,updateBookingToInProgress,updateBookingToCompleted} from '../controllers/agentController'
+import {getAgentDashboard,updateExtraTaskInBooking,deleteExtraTaskFromBooking,getExtraTasksForBooking,addExtraTaskToBooking,updateBookingToInProgress,updateBookingToCompleted,getBookingById,changeBookingStatus} from '../controllers/agentController'
 // Setup Multer for image uploads
 const upload = multer({ dest: 'uploads/' });
 
@@ -21,13 +21,20 @@ router.put('/bookings/:bookingId/extra-task/:taskIndex', verifyJWT("AGENT"), upd
 // Delete a service from a booking
 router.delete('/bookings/:bookingId/extra-task/:taskIndex', verifyJWT("AGENT"), deleteExtraTaskFromBooking);
 // Get all services for a specific booking
-router.get('/bookings/:bookingId/extra-tasks',verifyJWT , getExtraTasksForBooking);
+router.get('/bookings/:bookingId/extra-tasks',verifyJWT("AGENT") , getExtraTasksForBooking);
 
 // Route to update booking status to "In Progress"
-router.put('/bookings/in-progress', verifyJWT, updateBookingToInProgress);
+router.put('/bookings/in-progress', verifyJWT("AGENT"), updateBookingToInProgress);
 
 // Route to update booking status to "Completed"
-router.put('/bookings/completed', verifyJWT, updateBookingToCompleted);
+router.put('/bookings/completed', verifyJWT("AGENT"), updateBookingToCompleted);
+
+
+// Route to get a booking by ID
+router.get('booking/:id', getBookingById);
+
+// Route to change the status of a booking
+router.put('/change-status', changeBookingStatus)
 
 
 export default router;
