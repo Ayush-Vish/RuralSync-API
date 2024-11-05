@@ -14,7 +14,7 @@ app.use(cookieParser());
 const env = process.env.NODE_ENV || 'development';
 
 app.use(cors({
-  origin: [ 'http://localhost:5173', 'https://ruralsync-service-provider.vercel.app'],
+  origin: [ 'http://localhost:5173','http://localhost:5174', 'https://ruralsync-service-provider.vercel.app'],
   credentials: true
 }))
 app.use('/auth' ,authRoutes);

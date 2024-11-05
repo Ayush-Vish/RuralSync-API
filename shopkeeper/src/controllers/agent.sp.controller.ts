@@ -124,8 +124,9 @@ const assignAgentForaBooking = async (
     const serviceCompany = await Org.findOne({
       ownerId : serviceProviderId
     })
-    serviceCompany.clients.push(booking.client._id);
-
+    await serviceCompany.clients.push(booking.client._id);
+    console.log('serviceCompany:', serviceCompany.clients);
+    await serviceCompany.save();
 
     // Update booking and agent status
     booking.agent = agentId;

@@ -2,7 +2,7 @@ import {
   addAuditLogJob,
   addEmailJob,
   ApiError,
-  cookieOptions,
+  createCookieOptions,
   generateAccessAndRefreshToken,
   getDeviceAndLocationInfo,
   sendLoginConfirmationEmail,
@@ -37,7 +37,7 @@ const registerServiceProvider = async (
       },
       'SOME_SECRET'
     );
-    res.cookie('token', token, cookieOptions);
+    res.cookie('token', token, createCookieOptions("SERVICE_PROVIDER"));
     return res.status(201).json({
       message: 'Service Provider created successfully',
       data: newServiceProvider,
@@ -71,7 +71,7 @@ const clientRegister = async (
       },
       'SOME_SECRET'
     );
-    res.cookie('token', token, cookieOptions);
+    res.cookie('token', token, createCookieOptions("CLIENT"));
     return res.status(201).json({
       message: 'Client created successfully',
       data: newClient,
@@ -103,7 +103,7 @@ export const agentRegister = async (
       return next(new ApiError('Agent already exists', 400));
     }
     console.log(req.body)
-    const serviceCompany = Org.findOne({
+    const serviceCompany = await Org.findOne({
       ownerId : serviceProviderId
     })
 
@@ -113,6 +113,8 @@ export const agentRegister = async (
     }});
     
     (await serviceCompany).agents.push(newAgent._id);
+    await serviceCompany.save();
+    
     return res.status(201).json({
       message: 'Agent created successfully',
       data: newAgent,
@@ -168,8 +170,8 @@ const loginServiceProvider = async (
       'SERVICE_PROVIDER',
       serviceProvider._id
     );
-    res.cookie('accessToken', accessToken, cookieOptions);
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+    res.cookie('accessToken', accessToken, createCookieOptions("SERVICE_PROVIDER"));
+    res.cookie('refreshToken', refreshToken, createCookieOptions("SERVICE_PROVIDER"));
     await sendLoginConfirmationEmail(serviceProvider, 'SERVICE_PROVIDER', req);
     
 
@@ -245,8 +247,8 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
 
     // Set cookies and send response
     return res
-      .cookie('accessToken', accessToken, cookieOptions)
-      .cookie('refreshToken', refreshToken, cookieOptions)
+      .cookie('accessToken', accessToken, createCookieOptions("AGENT"))
+      .cookie('refreshToken', refreshToken, createCookieOptions("AGENT"))
       .status(200)
       .json({
         success: true,
@@ -292,8 +294,8 @@ const loginClient = async (req: Request, res: Response, next: NextFunction) => {
       'CLIENT',
       client.id
     );
-    res.cookie('accessToken', accessToken, cookieOptions);
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+    res.cookie('accessToken', accessToken, createCookieOptions("CLIENT"));
+    res.cookie('refreshToken', refreshToken, createCookieOptions("CLIENT"));
     await sendLoginConfirmationEmail(client, 'CLIENT', req);
     
     return res.status(200).json({
@@ -351,8 +353,8 @@ const logout = async (
     }
     return res
       .status(200)
-      .clearCookie('accessToken', cookieOptions)
-      .clearCookie('refreshToken', cookieOptions)
+      .clearCookie('accessToken', createCookieOptions(role))
+      .clearCookie('refreshToken', createCookieOptions(role))
       .json({ message: 'Logout successful' });
   } catch (error) {
     return next(new ApiError('An error occurred', 500));

@@ -71,22 +71,33 @@ export class ApiError extends Error {
 
     }
 }
-type CookieOptions =  {
+type CookieOptions = {
   maxAge: number;
   httpOnly: boolean;
   secure?: boolean;
   sameSite: "none";
-  path:string;
-
-}
-export const cookieOptions : CookieOptions = {
-  maxAge: 5 * 24 * 60 * 60 * 100,
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  path:"/"
+  path: string;
 };
 
+export const createCookieOptions = (role: Role): CookieOptions => {
+  let path = "/";
+  // Set a different path for each role if needed
+  if (role === "CLIENT") {
+    path = "/client"; // Cookie will be accessible only to CLIENT endpoints
+  } else if (role === "AGENT") {
+    path = "/agent"; // Cookie will be accessible only to AGENT endpoints
+  } else if (role === "SERVICE_PROVIDER") {
+    path = "/service-provider"; // Cookie will be accessible only to SERVICE PROVIDER endpoints
+  }
+
+  return {
+    maxAge: 5 * 24 * 60 * 60 * 1000, // Note: fixed the 100 multiplier to 1000 to represent milliseconds
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: path,
+  };
+};
 
 export const generateAccessAndRefreshToken = async (role : Role , id :any)  => {
   try {
@@ -138,11 +149,4 @@ export const generateAccessAndRefreshToken = async (role : Role , id :any)  => {
     throw new ApiError("Error generating token" + error.message, 500);
   }
 } 
-
-
-
-
-
-
-
 

@@ -185,7 +185,6 @@ export const createBooking = async (
     res.status(500).json({ message: error.message });
   }
 };
-// Get Customer Bookings
 export const getCustomerBookings = async (
   req: RequestWithUser,
   res: Response
@@ -307,7 +306,7 @@ export const getAllServiceProviders = async (
   next: NextFunction
 ) => {
   try {
-    const serviceProviders = await ServiceProvider.find()
+    const serviceProviders = await ServiceProvider.find({})
   .populate({
     path: 'serviceCompany',
     select: 'name categories description images rating' // Combine all fields into one select
