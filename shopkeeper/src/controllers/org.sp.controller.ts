@@ -119,8 +119,10 @@ const registerOrg = async (
       ownerId: req.user.id,
     });
     console.log('4');
-
+    serviceProvider.serviceCompany = newOrg._id;
     await newOrg.save();
+    await serviceProvider.save();
+    console.log('5');
 
     return res.status(201).json({
       message: 'Organization created successfully',
