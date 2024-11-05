@@ -5,18 +5,18 @@ import { createReview, deleteReview, getCustomerReviews, getServiceProviderRevie
 const router = express.Router();
 
 // Create a new review
-router.post('/reviews', verifyJWT, createReview);
+router.post('/reviews', verifyJWT("CLIENT"), createReview);
 
 // Update an existing review
-router.put('/reviews/:reviewId', verifyJWT, updateReview);
+router.put('/reviews/:reviewId', verifyJWT("CLIENT"), updateReview);
 
 // Get all reviews for a specific service provider
 router.get('/serviceProviders/:serviceProviderId/reviews', getServiceProviderReviews);
 
 // Delete a review
-router.delete('/reviews/:reviewId', verifyJWT, deleteReview);
+router.delete('/reviews/:reviewId', verifyJWT("CLIENT"), deleteReview);
 
 // Get all reviews written by the authenticated customer
-router.get('/customers/reviews', verifyJWT, getCustomerReviews);
+router.get('/customers/reviews', verifyJWT("CLIENT"), getCustomerReviews);
 
 export default router;

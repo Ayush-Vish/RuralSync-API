@@ -28,7 +28,7 @@ router.get('/', (req, res) => {
  */
 router.get(
   '/org-detail',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   getOrgDetails
 );
@@ -52,7 +52,7 @@ router.get(
  */
 router.post(
   '/register-org',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   upload.fields([
     { name: 'logo', maxCount: 1 },
@@ -79,7 +79,7 @@ router.post(
  */
 router.post(
   '/add-new-service',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   upload.fields([{ name: 'images', maxCount: 5 }]),
   addNewService
@@ -96,7 +96,7 @@ router.post(
  */
 router.post(
   '/assign-agent',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   assignAgent
 );
@@ -108,7 +108,7 @@ router.post(
  */
 router.get(
   '/agents',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   availableAgents
 );
@@ -124,7 +124,7 @@ router.get(
  */
 router.post(
   '/assign-booking',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   assignAgentForaBooking
 );
@@ -152,47 +152,47 @@ router.get('/search', searchServices);
 
 router.get(
   '/services',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   getAllServices
 );
 
 router.delete(
   `/delete-service/:serviceId`,
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   deleteService
 );
 
 router.get(
   '/all-agents',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   getAllAgents
 );
 router.delete(
   '/agent/:agentId',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   deleteAgent
 );
 
 router.get(
   '/agent/:agentId',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   getAgent
 );
 
 router.get(
   '/bookings',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   getBookings
 );
 router.get(
   '/booking/:bookingId',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   getBooking
   
