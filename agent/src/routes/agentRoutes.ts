@@ -9,17 +9,17 @@ import {getAgentDashboard,updateExtraTaskInBooking,deleteExtraTaskFromBooking,ge
 const upload = multer({ dest: 'uploads/' });
 
 // Agent dashboard: View all bookings
-router.get('/dashboard',verifyJWT, isAuthorized(['AGENT']),getAgentDashboard);
+router.get('/dashboard',verifyJWT("AGENT"), isAuthorized(['AGENT']),getAgentDashboard);
 
 // Add service to a booking (with image upload)
-router.post('/booking/:bookingId/service',verifyJWT,addExtraTaskToBooking);
+router.post('/booking/:bookingId/service',verifyJWT("AGENT"),addExtraTaskToBooking);
 
 // Update a service in a booking
-router.put('/bookings/:bookingId/extra-task/:taskIndex', verifyJWT, updateExtraTaskInBooking);
+router.put('/bookings/:bookingId/extra-task/:taskIndex', verifyJWT("AGENT"), updateExtraTaskInBooking);
 
 
 // Delete a service from a booking
-router.delete('/bookings/:bookingId/extra-task/:taskIndex', verifyJWT, deleteExtraTaskFromBooking);
+router.delete('/bookings/:bookingId/extra-task/:taskIndex', verifyJWT("AGENT"), deleteExtraTaskFromBooking);
 // Get all services for a specific booking
 router.get('/bookings/:bookingId/extra-tasks',verifyJWT , getExtraTasksForBooking);
 
