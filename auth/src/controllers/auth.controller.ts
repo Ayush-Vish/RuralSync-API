@@ -244,7 +244,7 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
     const agentResponse = agent.toObject();
     delete agentResponse.password;
     await sendLoginConfirmationEmail(agent, 'AGENT', req);
-
+    res.setHeader('Authorization', `Bearer ${accessToken}`);
     // Set cookies and send response
     return res
       .cookie('accessToken', accessToken, createCookieOptions("AGENT"))
@@ -253,7 +253,7 @@ const loginAgent = async (req: Request, res: Response, next: NextFunction) => {
       .json({
         success: true,
         message: 'Login successful',
-        data: agentResponse,
+        data: {agentResponse},
       });
 
   } catch (error) {
