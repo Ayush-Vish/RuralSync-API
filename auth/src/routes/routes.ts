@@ -22,12 +22,14 @@ router.post('/register', register);
 router.post('/login', loactionMiddleware,   login);
 router.post(
   '/agent-register',
-  verifyJWT,
+  verifyJWT("SERVICE_PROVIDER"),
   isAuthorized(['SERVICE_PROVIDER']),
   agentRegister
 );
 router.get('/logout', logout);
-router.get('/user-detail', verifyJWT, getUserDetails);
+router.get('/user-detail/agent', verifyJWT("AGENT"), getUserDetails);
+router.get('/user-detail/service-provider', verifyJWT("SERVICE_PROVIDER"), getUserDetails);
+router.get('/user-detail/client', verifyJWT("CLIENT"), getUserDetails);
 router.post('/upload', upload.single('file'),async (req, res) => {
   // Check if the file was uploaded successfully
   if (!req.file) {
