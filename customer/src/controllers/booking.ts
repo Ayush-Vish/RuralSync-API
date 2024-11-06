@@ -278,10 +278,19 @@ export const getAllServices = async (
 ) => {
   try {
     const services = await Service.find({})
-      // .populate('client', 'name email') // Populate customer details (optional)
-      // .populate('ServiceProvider', 'name email') // Populate provider details
-      // .populate('Org','name categories')
-      // .exec();
+    .populate({
+      path: 'serviceCompany',
+      select: 'name categories description images rating'
+    })
+    .populate({
+      path: 'assignedAgents',
+      select: 'name email address phoneNumber'
+    })
+    .populate({
+      path: 'serviceProvider',
+      select: 'name email phone address'
+    })
+  
     if (!services || services.length === 0) {
       return next(new ApiError('No services found', 404));
     }
