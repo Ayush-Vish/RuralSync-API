@@ -1,7 +1,7 @@
 
 import { NextFunction, Response } from 'express';
 // import { Agent, Client, ServiceProvider } from '@org/db';
-import { Booking, RequestWithUser } from '@org/db';
+import { Booking, RequestWithUser, Service } from '@org/db';
 import { addAuditLogJob, ApiError } from '@org/utils';
 
 
@@ -62,19 +62,17 @@ export const getAgentDashboard = async (req: RequestWithUser, res  : Response , 
     return next(new ApiError('Failed to fetch dashboard data', 500));
   }
 };
-
-// 1. Add an Extra Task to a Booking
 export const updateBookingStatus = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     const { bookingId } = req.params;
     const { status } = req.body;
     const agentId = req.user.id;
 
-    // Validate status
-    const validStatuses = ['Pending', 'In Progress', 'Completed'];
+    // Define all valid statuses
+    const validStatuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'Not Assigned'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
-        error: 'Invalid status. Must be one of: Pending, In Progress, Completed'
+        error: 'Invalid status. Must be one of: Pending, Confirmed, In Progress, Completed, Cancelled, Not Assigned'
       });
     }
 
@@ -90,13 +88,17 @@ export const updateBookingStatus = async (req: RequestWithUser, res: Response, n
       });
     }
 
-    // Validate status transition
+    // Define valid transitions for each status
     const validTransitions: { [key: string]: string[] } = {
-      'Pending': ['In Progress'],
-      'In Progress': ['Completed'],
-      'Completed': []
+      'Not Assigned': ['Pending', 'Confirmed'],
+      'Pending': ['Confirmed', 'Cancelled'],
+      'Confirmed': ['In Progress', 'Cancelled'],
+      'In Progress': ['Completed', 'Cancelled'],
+      'Completed': [],
+      'Cancelled': []
     };
 
+    // Validate status transition
     if (!validTransitions[booking.status]?.includes(status)) {
       return res.status(400).json({
         error: `Cannot transition from ${booking.status} to ${status}`
@@ -131,7 +133,6 @@ export const updateBookingStatus = async (req: RequestWithUser, res: Response, n
     return next(new ApiError('Failed to update booking status', 500));
   }
 };
-
 // Add or update extra task with price calculation
 export const manageExtraTask = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -304,3 +305,75 @@ export const deleteExtraTask = async (req: RequestWithUser, res: Response, next:
 };
 
 
+export const markBookingAsPaid = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    const { bookingId } = req.params;
+    const agentId = req.user.id;
+
+    // Find and validate booking
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      agent: agentId
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        error: 'Booking not found or not assigned to this agent'
+      });
+    }
+
+    // Don't allow marking as paid if booking is completed or cancelled
+    if (booking.status === 'Cancelled' || booking.status === 'Completed') {
+      return res.status(400).json({
+        error: 'Cannot mark cancelled or completed bookings as paid'
+      });
+    }
+
+    // Recalculate total price to ensure consistency
+    const extraTasksTotal = booking.extraTasks.reduce((sum, task) => 
+      sum + Number(task.extraPrice), 0
+    );
+    const service = await Service.findOne({
+      serviceProvider : booking.serviceProvider
+    })
+    const basePrice = service.basePrice || 0;  // Assuming basePrice is a separate field in the Booking schema
+    const calculatedTotalPrice = basePrice + extraTasksTotal;
+
+    // If there's a mismatch, update the booking's totalPrice
+    if (calculatedTotalPrice !== booking.totalPrice) {
+      booking.totalPrice = calculatedTotalPrice;
+    }
+
+    // Update payment status
+    booking.paymentStatus = 'Paid';
+    booking.status = "Completed";
+    booking.updatedAt = new Date();
+    await booking.save();
+
+    // Add audit log
+    await addAuditLogJob({
+      action: 'MARK_BOOKING_PAID',
+      userId: agentId,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata: {
+        calculatedTotalPrice,
+        finalPrice: booking.totalPrice
+      },
+      username: req.user.name,
+      serviceProviderId: booking.serviceProvider
+    });
+
+    return res.status(200).json({
+      message: 'Booking marked as paid successfully',
+      booking: {
+        ...booking.toObject(),
+        totalPrice: booking.totalPrice,
+        paymentStatus: booking.paymentStatus
+      }
+    });
+
+  } catch (error) {
+    return next(new ApiError('Failed to mark booking as paid', 500));
+  }
+};
