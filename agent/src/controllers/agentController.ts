@@ -1,16 +1,31 @@
 
-
+import { NextFunction, Response } from 'express';
 // import { Agent, Client, ServiceProvider } from '@org/db';
-import { Booking } from '@org/db';
-import { addAuditLogJob } from '@org/utils';
+import { Booking, RequestWithUser } from '@org/db';
+import { addAuditLogJob, ApiError } from '@org/utils';
 
 
 
+export const getBooking = async (req: RequestWithUser, res: Response, next: NextFunction) =>  {
+  try {
+    const { bookingId } = req.params;
+    console.log("AAAAAAAAAAAAA",bookingId);
 
+    // Find the booking
+    const booking =await  Booking.findById(bookingId)
+                    .populate('client', 'name email phone')
+                    .populate('agent', 'name email phone')
+                    .populate('serviceProvider', 'name email phone');
+    return res.status(200).json({ booking });
+  } catch (error) {
+    return next(new ApiError('Failed to fetch booking', 500));
+  }
+}
 
 // Show all pending, in-progress, and completed bookings
-export const getAgentDashboard = async (req, res) => {
+export const getAgentDashboard = async (req: RequestWithUser, res  : Response , next:NextFunction) => {
   try {
+    console.log("AAAAAAAAAAAAA",req.user);
     const agentId = req.user.id;
 
     console.log("AAAAAAAAAAAAA",agentId);
@@ -37,274 +52,255 @@ export const getAgentDashboard = async (req, res) => {
       username: req.user.name,
       serviceProviderId: bookings[0].serviceProvider
     });
-    res.status(200).json({
+    return res.status(200).json({
       totalBookings: bookings.length,
       pendingBookings,
       inProgressBookings,
       completedBookings,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+    return next(new ApiError('Failed to fetch dashboard data', 500));
   }
 };
 
 // 1. Add an Extra Task to a Booking
-export const addExtraTaskToBooking = async (req, res) => {
+export const updateBookingStatus = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     const { bookingId } = req.params;
-    const { description, extraPrice } = req.body;
+    const { status } = req.body;
+    const agentId = req.user.id;
 
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
+    // Validate status
+    const validStatuses = ['Pending', 'In Progress', 'Completed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: 'Invalid status. Must be one of: Pending, In Progress, Completed'
+      });
+    }
+
+    // Find and validate booking
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      agent: agentId
+    });
+
     if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' });
+      return res.status(404).json({
+        error: 'Booking not found or not assigned to this agent'
+      });
     }
 
-    // Check if the agent is allowed to modify this booking
-    if (!booking.agent || booking.agent.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to modify this booking' });
+    // Validate status transition
+    const validTransitions: { [key: string]: string[] } = {
+      'Pending': ['In Progress'],
+      'In Progress': ['Completed'],
+      'Completed': []
+    };
+
+    if (!validTransitions[booking.status]?.includes(status)) {
+      return res.status(400).json({
+        error: `Cannot transition from ${booking.status} to ${status}`
+      });
     }
 
-    // Add the extra task to the booking
-    booking.extraTasks.push({ description, extraPrice });
+    // Update status
+    booking.status = status;
     booking.updatedAt = new Date();
     await booking.save();
+
+    // Add audit log
     await addAuditLogJob({
-      action: 'ADD_EXTRA_TASK',
-      userId: booking.agent,
+      action: 'UPDATE_BOOKING_STATUS',
+      userId: agentId,
+      role: 'AGENT',
+      targetId: bookingId,
+      metadata: {
+        previousStatus: booking.status,
+        newStatus: status,
+      },
+      username: req.user.name,
+      serviceProviderId: booking.serviceProvider
+    });
+
+    return res.status(200).json({
+      message: `Booking status updated to ${status}`,
+      booking
+    });
+
+  } catch (error) {
+    return next(new ApiError('Failed to update booking status', 500));
+  }
+};
+
+// Add or update extra task with price calculation
+export const manageExtraTask = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  try {
+    const { bookingId } = req.params;
+    const { description, extraPrice, taskId } = req.body;
+    const agentId = req.user.id;
+
+    // Validate input
+    if (!description || !extraPrice || isNaN(Number(extraPrice))) {
+      return res.status(400).json({
+        error: 'Description and valid extra price are required'
+      });
+    }
+
+    // Find and validate booking
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      agent: agentId
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        error: 'Booking not found or not assigned to this agent'
+      });
+    }
+
+    // Don't allow modifications if booking is completed
+    if (booking.status === 'Completed') {
+      return res.status(400).json({
+        error: 'Cannot modify extra tasks for completed bookings'
+      });
+    }
+
+    let action = 'ADD_EXTRA_TASK';
+    // Update existing task or add new one
+    if (taskId) {
+      const taskIndex = booking.extraTasks.findIndex(task => task._id.toString() === taskId);
+      if (taskIndex === -1) {
+        return res.status(404).json({ error: 'Task not found' });
+      }
+      booking.extraTasks[taskIndex].set({ description, extraPrice });
+      action = 'UPDATE_EXTRA_TASK';
+    } else {
+      booking.extraTasks.push({ description, extraPrice });
+    }
+
+    // Calculate total price including extra tasks
+    const extraTasksTotal = booking.extraTasks.reduce((sum, task) => 
+      sum + Number(task.extraPrice), 0
+    );
+    
+    // Add base price to total if it exists
+    const basePrice = booking.totalPrice || 0;
+    booking.totalPrice = basePrice + extraTasksTotal;
+
+    // If payment status is Paid, mark as Unpaid due to price change
+    if (booking.paymentStatus === 'Paid') {
+      booking.paymentStatus = 'Unpaid';
+    }
+
+    await booking.save();
+
+    // Add audit log
+    await addAuditLogJob({
+      action,
+      userId: agentId,
       role: 'AGENT',
       targetId: bookingId,
       metadata: {
         description,
         extraPrice,
+        newTotalPrice: booking.totalPrice
       },
       username: req.user.name,
       serviceProviderId: booking.serviceProvider
-    })
-    res.status(201).json({
-      message: 'Extra task added successfully',
-      extraTasks: booking.extraTasks,
     });
+
+    return res.status(200).json({
+      message: `Extra task ${taskId ? 'updated' : 'added'} successfully`,
+      booking: {
+        ...booking.toObject(),
+        totalPrice: booking.totalPrice,
+        paymentStatus: booking.paymentStatus
+      }
+    });
+
   } catch (error) {
-    res.status(500).json({ error: 'Failed to add extra task to booking' });
+    return next(new ApiError('Failed to manage extra task', 500));
   }
 };
 
-// 2. Update an Extra Task in a Booking
-export const updateExtraTaskInBooking = async (req, res) => {
+// Delete extra task
+export const deleteExtraTask = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
-    const { bookingId, taskIndex } = req.params;
-    const { description, extraPrice } = req.body;
+    const { bookingId, taskId } = req.params;
+    const agentId = req.user.id;
 
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' });
-    }
-
-    // Check if the agent is allowed to modify this booking
-    if (!booking.agent || booking.agent.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to modify this booking' });
-    }
-
-    // Check if the task index is valid
-    if (taskIndex >= booking.extraTasks.length || taskIndex < 0) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-
-    // Update the specific extra task
-    if (description) booking.extraTasks[taskIndex].description = description;
-    if (extraPrice) booking.extraTasks[taskIndex].extraPrice = extraPrice;
-    booking.updatedAt = new Date();
-    await booking.save();
-    await addAuditLogJob({
-      action: 'UPDATE_EXTRA_TASK',
-      userId: booking.agent,
-      role: 'AGENT',
-      targetId: bookingId,
-      metadata: {
-        description,
-        extraPrice,
-      },
-      username: req.user.name,
-      serviceProviderId: booking.serviceProvider
-    })
-    res.status(200).json({
-      message: 'Extra task updated successfully',
-      extraTasks: booking.extraTasks,
+    // Find and validate booking
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      agent: agentId
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update extra task' });
-  }
-};
 
-// 3. Delete an Extra Task from a Booking
-export const deleteExtraTaskFromBooking = async (req, res) => {
-  try {
-    const { bookingId, taskIndex } = req.params;
-
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
     if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' });
+      return res.status(404).json({
+        error: 'Booking not found or not assigned to this agent'
+      });
     }
 
-    // Check if the agent is allowed to modify this booking
-    if (!booking.agent || booking.agent.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to delete this task' });
+    // Don't allow modifications if booking is completed
+    if (booking.status === 'Completed') {
+      return res.status(400).json({
+        error: 'Cannot delete extra tasks for completed bookings'
+      });
     }
 
-    // Check if the task index is valid
-    if (taskIndex >= booking.extraTasks.length || taskIndex < 0) {
+    // Find and remove task
+    const taskIndex = booking.extraTasks.findIndex(task => 
+      task._id.toString() === taskId
+    );
+
+    if (taskIndex === -1) {
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    // Remove the task at the specified index
+    const deletedTask = booking.extraTasks[taskIndex];
     booking.extraTasks.splice(taskIndex, 1);
+
+    // Recalculate total price
+    const extraTasksTotal = booking.extraTasks.reduce((sum, task) => 
+      sum + Number(task.extraPrice), 0
+    );
+    
+    const basePrice = booking.totalPrice || 0;
+    booking.totalPrice = basePrice + extraTasksTotal;
+
+    // If payment status is Paid, mark as Unpaid due to price change
+    if (booking.paymentStatus === 'Paid') {
+      booking.paymentStatus = 'Unpaid';
+    }
+
     await booking.save();
+
+    // Add audit log
     await addAuditLogJob({
       action: 'DELETE_EXTRA_TASK',
-      userId: booking.agent,
-      role: 'AGENT',
-      targetId: bookingId,
-      metadata: {
-        taskIndex,
-      },
-      username: req.user.name,
-      serviceProviderId: booking.serviceProvider
-    })
-    res.status(200).json({ message: 'Extra task deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete extra task' });
-  }
-};
-
-// 4. Get All Extra Tasks of a Booking (for agent's dashboard)
-export const getExtraTasksForBooking = async (req, res) => {
-  try {
-    const { bookingId } = req.params;
-
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking not found' });
-    }
-
-    // Check if the agent is allowed to view tasks for this booking
-    if (!booking.agent || booking.agent.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized to view extra tasks' });
-    }
-
-    res.status(200).json({ extraTasks: booking.extraTasks });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch extra tasks' });
-  }
-};
-
-
-
-
-
-export const updateBookingToInProgress = async (req, res) => {
-  try {
-    const { bookingId } = req.body;
-    const agentId = req.user.id;
-
-    // Find the booking and ensure it belongs to the agent
-    const booking = await Booking.findOne({ 
-      _id: bookingId,
-      agent: agentId 
-    });
-
-    if (!booking) {
-      return res.status(404).json({ 
-        error: 'Booking not found or not assigned to this agent' 
-      });
-    }
-
-    // Validate current status
-    if (booking.status !== 'Pending') {
-      return res.status(400).json({ 
-        error: 'Booking must be in Pending status to move to In Progress' 
-      });
-    }
-
-    // Update the status
-    booking.status = 'In Progress';
-    // booking.startTime = new Date(); // Optional: track when work started
-    await booking.save();
-    await addAuditLogJob({
-      action: 'UPDATE_BOOKING_STATUS',
       userId: agentId,
       role: 'AGENT',
       targetId: bookingId,
       metadata: {
-        status: 'In Progress',
+        deletedTask,
+        newTotalPrice: booking.totalPrice
       },
       username: req.user.name,
       serviceProviderId: booking.serviceProvider
-    })
-    res.status(200).json({
-      message: 'Booking status updated to In Progress',
-      booking
+    });
+
+    return res.status(200).json({
+      message: 'Extra task deleted successfully',
+      booking: {
+        ...booking.toObject(),
+        totalPrice: booking.totalPrice,
+        paymentStatus: booking.paymentStatus
+      }
     });
 
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Failed to update booking status',
-      message: error.message 
-    });
+    return next(new ApiError('Failed to delete extra task', 500));
   }
 };
 
-export const updateBookingToCompleted = async (req, res) => {
-  try {
-    const { bookingId } = req.body;
-    const agentId = req.user.id;
 
-    // Find the booking and ensure it belongs to the agent
-    const booking = await Booking.findOne({ 
-      _id: bookingId,
-      agent: agentId 
-    });
-
-    if (!booking) {
-      return res.status(404).json({ 
-        error: 'Booking not found or not assigned to this agent' 
-      });
-    }
-
-    // Validate current status
-    if (booking.status !== 'In Progress') {
-      return res.status(400).json({ 
-        error: 'Booking must be in In Progress status to move to Completed' 
-      });
-    }
-
-    // Update the status
-    booking.status = 'Completed';
-    // booking.completionTime = new Date(); // Optional: track when work was completed
-    await booking.save();
-    await addAuditLogJob({
-      action: 'UPDATE_BOOKING_STATUS',
-      userId: agentId,
-      role: 'AGENT',
-      targetId: bookingId,
-      metadata: {
-        status: 'Completed',
-      },
-      username: req.user.name,
-      serviceProviderId: booking.serviceProvider
-    })
-    res.status(200).json({
-      message: 'Booking status updated to Completed',
-      booking
-    });
-
-  } catch (error) {
-    res.status(500).json({ 
-      error: 'Failed to update booking status',
-      message: error.message 
-    });
-  }
-};

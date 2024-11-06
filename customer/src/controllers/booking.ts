@@ -278,10 +278,9 @@ export const getAllServices = async (
 ) => {
   try {
     const services = await Service.find({})
-      // .populate('client', 'name email') // Populate customer details (optional)
-      // .populate('ServiceProvider', 'name email') // Populate provider details
-      // .populate('Org','name categories')
-      // .exec();
+      .populate('serviceProvider', 'name email')
+      .populate('serviceCompany','name categories')
+      .exec();
     if (!services || services.length === 0) {
       return next(new ApiError('No services found', 404));
     }

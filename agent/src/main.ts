@@ -10,19 +10,25 @@ app.use(cookieParser());
 app.use(express.json())
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 import cors from 'cors';
+import { errorMiddleware } from '@org/utils';
 
 const env = process.env.NODE_ENV || 'development';
+connectToDb();
 app.use(cors({
   origin: [ 'http://localhost:5173', 'https://ruralsync-service-provider.vercel.app'],
   credentials: true
 }))
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-app.use('/agent',agentRoutes);
 
-connectToDb();
+app.use(cookieParser());
+app.use(express.json());
 
+
+app.use('/agent/',agentRoutes);
+app.use("*" ,errorMiddleware )
 const port = process.env.AGENT_PORT || 5000;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+  console.log(`Listening at http://localhost:${port}/agent`);
 });
 server.on('error', console.error);

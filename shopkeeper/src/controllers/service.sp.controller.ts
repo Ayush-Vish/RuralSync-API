@@ -19,6 +19,7 @@ const addNewService = async (
       estimatedDuration,
       location,
       address,
+      additionalTasks,
       tags,
     } = req.body;
 
@@ -64,13 +65,7 @@ const addNewService = async (
     console.timeEnd('Upload Images');
 
     // Ensure availability and location are properly parsed
-    const parsedAvailability = Array.isArray(availability)
-      ? availability.map((item) => ({
-          day: item.day,
-          startTime: item.startTime,
-          endTime: item.endTime,
-        }))
-      : [];
+    
 
     const parsedLocation = JSON.parse(location);
 
@@ -79,7 +74,8 @@ const addNewService = async (
       description,
       basePrice,
       category,
-      availability: parsedAvailability,
+      additionalTasks: JSON.parse(additionalTasks) || [],
+      availability: JSON.parse(availability),
       estimatedDuration,
       location: {
         type: 'Point',

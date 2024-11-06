@@ -9,6 +9,7 @@ export const verifyJWT = (allowedRole: UserRole) => {
     next: NextFunction
   ) => {
     try {
+      console.log('verifyJWT middleware');
       // Get token from either cookies or Authorization header
 
       let token ;
@@ -81,8 +82,9 @@ export const verifyJWT = (allowedRole: UserRole) => {
         name: user.username || user.name,
         ip
       };
-
+      console.log(user)
       next();
+      console.log("Next");
     } catch (error) {
       return next(
         new ApiError('An unexpected error occurred during token verification: ' + error.message, 500)
@@ -102,6 +104,7 @@ export const isAuthorized = (allowedRoles: UserRole[]) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
       return next(new ApiError('You do not have permission to access this resource', 403));
     }
+    console.log("Next");
     next();
   };
 };

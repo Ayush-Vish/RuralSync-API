@@ -32,7 +32,7 @@ const serviceSchema = new Schema({
   finalPrice: { type: Number, default: null },
   additionalTasks: [extraTaskSchema],
   ratings: { 
-    average: { type: Number, default: 0 },
+    average: { type: Number, default: 4 },
     count: { type: Number, default: 0 }
   },
 images  : [{ type: String }],

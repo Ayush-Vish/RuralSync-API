@@ -9,8 +9,6 @@ const s3 = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
-
-
 /**
  * Utility function to upload a file to S3
  * @param {Object} file - The file object (usually req.file from multer)

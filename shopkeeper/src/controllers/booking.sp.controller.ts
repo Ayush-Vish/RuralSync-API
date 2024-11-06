@@ -10,10 +10,11 @@ const getBookings = async (
   try {
     const serviceProviderId = req.user.id;
     const bookings = await Booking.find({ serviceProvider: serviceProviderId })
-      .populate('client', 'name email') // Populate customer details (optional)
+      .populate('client', 'name email') 
       .populate('service', 'name description') // Populate service details (optional)
       .populate('agent', 'name email') // Populate agent details (optional)
       .exec();
+      console.log("AAAAAAAAAAAAA",bookings);
 
     return res.status(200).json({
       message: 'Booking fetched Successfully',
