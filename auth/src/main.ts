@@ -2,8 +2,6 @@ import express from 'express';
 
 import authRoutes from "./routes/routes";
 import { connectToDb } from '@org/db';
-import swaggerjsdoc,{ Options } from 'swagger-jsdoc';   // Import types for swagger options
-import swaggerUi from 'swagger-ui-express';
 import { errorMiddleware } from '@org/utils';
 import cookieParser from 'cookie-parser';
 import cors from "cors";

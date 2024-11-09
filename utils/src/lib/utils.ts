@@ -82,8 +82,6 @@ type CookieOptions = {
 export const createCookieOptions = (): CookieOptions => {
   const  path = "/";
   // Set a different path for each role if needed
- 
-
   return {
     maxAge: 5 * 24 * 60 * 60 * 1000, // Note: fixed the 100 multiplier to 1000 to represent milliseconds
     httpOnly: false,

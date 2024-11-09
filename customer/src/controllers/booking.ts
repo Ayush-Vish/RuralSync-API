@@ -1,6 +1,5 @@
 import { Booking, RequestWithUser, Service, ServiceProvider } from '@org/db';
 import { ApiError, addAuditLogJob, addEmailJob } from '@org/utils';
-import { RequestId } from 'aws-sdk/clients/cloudwatchlogs';
 import { NextFunction, Request, RequestParamHandler, Response } from 'express';
 import moment from 'moment';
 import mongoose from 'mongoose';

@@ -18,7 +18,7 @@ app.get('/email', (req, res) => {
   res.send({ message: 'Welcome to email-service!' });
 });
 
-app.use("/email" ,emailRoutes  );
+app.use("/email-service" ,emailRoutes  );
 
 const port = process.env.EMAIL_PORT || 5005;
 const server = app.listen(port, () => {
