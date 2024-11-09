@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request ,Express} from 'express';
 import mongoose from 'mongoose';
 import { Schema } from 'mongoose';
 const sessionSchema = new Schema({
@@ -22,10 +22,11 @@ export type User = {
   location?:any
   
 };
+import multer from "multer"
 export interface RequestWithUser extends Request  {
   user: User;
   files: {
-    logo?: Express.Multer.File[];
-    images?: Express.Multer.File[];
+    logo?: Express.Multer.File[]
+    images?: Express.Multer.File[]
   };
 }
