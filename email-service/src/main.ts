@@ -13,14 +13,14 @@ dotenv.config();
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.use(express.json());
-app.get('/api', (req, res) => {
+app.get('/email', (req, res) => {
   res.send({ message: 'Welcome to email-service!' });
 });
 
 app.use("/email" ,emailRoutes  );
 
-const port =5005;
+const port = process.env.EMAIL_PORT || 5005;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
+  console.log(`Listening at http://localhost:${port}/email`);
 });
 server.on('error', console.error);

@@ -5,7 +5,7 @@ import axios from 'axios';
 
 // Connect to Redis
 const connection = new IORedis({
-  host: 'localhost',
+  host: 'redis',
   port: 6379,
   maxRetriesPerRequest: null,
 });

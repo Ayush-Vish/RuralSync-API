@@ -50,7 +50,7 @@ app.post("/audit-log/create" , async(req : Request, res : Response , next : Next
   }
 });
 
-app.get("/audit-logs" , verifyJWT , isAuthorized(["SERVICE_PROVIDER"]) , async(req : RequestWithUser, res : Response , next : NextFunction) => {
+app.get("/audit-log" , verifyJWT , isAuthorized(["SERVICE_PROVIDER"]) , async(req : RequestWithUser, res : Response , next : NextFunction) => {
   try {
       const serviceProviderId = req.user.id;
 
@@ -65,7 +65,7 @@ app.get("/audit-logs" , verifyJWT , isAuthorized(["SERVICE_PROVIDER"]) , async(r
 
 app.use(errorMiddleware);
 
-const port = 5006;
+const port = process.env.AUDIT_PORT || 5006;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/audit-log`);
 });
