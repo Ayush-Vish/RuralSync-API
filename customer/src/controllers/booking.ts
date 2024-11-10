@@ -352,25 +352,14 @@ export const createBooking2 = async (
   res: Response
 ): Promise<void> => {
   try {
-    const customerId = req.body.clientId; // Assuming customer ID is extracted from the authenticated user
-    const {
-      services, // Accept an array of services
-    }: {
-      services: {
-        serviceId: string;
-        bookingDate: string;
-        bookingTime: string;
-        extraTasks?: ExtraTask[];
-        location?: Location;
-        address?:string;
-      }[];
-    } = req.body;
-
-    // Validate that services array is provided
+    // Extract the clientId from the first item in the services array
+    const services = req.body.services;
     if (!services || services.length === 0) {
       res.status(400).json({ message: 'At least one service is required' });
       return;
     }
+    
+    const customerId = services[0].clientId;
 
     // Result array to store created bookings
     const createdBookings = [];
@@ -383,6 +372,7 @@ export const createBooking2 = async (
         bookingTime,
         extraTasks,
         location,
+        address
       } = serviceData;
 
       // Validate required fields
@@ -423,7 +413,7 @@ export const createBooking2 = async (
         return;
       }
 
-      // Validate and format the date using moment.js
+      // Validate and format the date
       const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format(
         'YYYY-MM-DD'
       );
@@ -436,10 +426,11 @@ export const createBooking2 = async (
 
       // Build the booking object
       const newBookingData: NewBookingData = {
-        client: customerId as any,
-        service: serviceId as any,
-        bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
-        bookingTime: bookingTime, // Save time as string
+        client: customerId,
+        service: serviceId,
+        bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`),
+        bookingTime,
+        address,
       };
 
       // If extra tasks are provided, add them to the booking
@@ -470,24 +461,9 @@ export const createBooking2 = async (
 
       console.log('PopulatedBooking ', populatedBooking);
 
-      await populatedBooking.save();
-      createdBookings.push(populatedBooking); // Add to result array
+      createdBookings.push(populatedBooking);
 
-      await addAuditLogJob({
-        action: 'CREATE_BOOKING',
-        userId: customerId,
-        role: 'CLIENT',
-        targetId: newBooking._id,
-        metadata: {
-          service: serviceId,
-          bookingDate: formattedBookingDate,
-          bookingTime,
-          extraTasks,
-          location,
-        },
-        username: req.user.name,
-        serviceProviderId: service.serviceProvider,
-      });
+      // Optionally add audit log logic here
     }
 
     res.status(201).json({ message: 'Bookings created successfully', bookings: createdBookings });
@@ -496,7 +472,6 @@ export const createBooking2 = async (
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 
