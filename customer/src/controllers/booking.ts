@@ -480,6 +480,43 @@ export const createBooking2 = async (
 
 
 
+export const getServiceById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const service = await Service.findById(id)
+      .populate('serviceProvider', 'name email')
+      .populate('serviceCompany', 'name categories')
+      .exec();
+
+    if (!service) {
+      return next(new ApiError(`Service with ID ${id} not found`, 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: service,
+    });
+  } catch (error) {
+    next(
+      new ApiError(
+        `An error occurred while fetching service with ID ${req.params.id}: ${error.message}`,
+        500
+      )
+    );
+  }
+};
+
+
+
+
+
+
+
+
 
 
 

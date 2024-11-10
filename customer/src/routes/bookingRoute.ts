@@ -7,6 +7,7 @@ import {
   getAllServices,
   getAllServiceProviders,
   createBooking2,
+  getServiceById,
   // getServices,
 } from '../controllers/booking';
 // import { authenticateUser } from '../middleware/authMiddleware.js';
@@ -32,6 +33,7 @@ router.get(
   getCustomerBookings
 );
 router.get('/bookings2/:clientId', getCustomerBookings2);
+router.get('/service/:id', getServiceById);
 // Route to delete a booking
 router.delete(
   '/bookings/:id',
