@@ -71,6 +71,9 @@ const bookingSchema = new mongoose.Schema({
     type: pointSchema,
     index: '2dsphere',
   },
+  address:{
+    type:String
+  }
 }, { timestamps: true });
 
 // Export the Booking model

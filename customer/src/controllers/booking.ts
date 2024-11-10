@@ -26,6 +26,7 @@ type NewBookingData = {
   bookingTime: string;
   extraTasks?: ExtraTask[];
   location?: Location;
+  address?:string;
 };
 
 export const createBooking = async (
@@ -35,155 +36,157 @@ export const createBooking = async (
   try {
     const customerId = req.user.id; // Assuming customer ID is extracted from the authenticated user
     const {
-      serviceId,
-      bookingDate,
-      bookingTime,
-      extraTasks,
-      location,
+      services, // Accept an array of services
     }: {
-      serviceId: string;
-      bookingDate: string;
-      bookingTime: string;
-      extraTasks?: ExtraTask[];
-      location?: Location;
+      services: {
+        serviceId: string;
+        bookingDate: string;
+        bookingTime: string;
+        extraTasks?: ExtraTask[];
+        location?: Location;
+        address?:string;
+      }[];
     } = req.body;
 
-    
-
-    // Validate required fields
-    if (!serviceId || !bookingDate || !bookingTime) {
-      res.status(400).json({ message: 'All fields are required' });
+    // Validate that services array is provided
+    if (!services || services.length === 0) {
+      res.status(400).json({ message: 'At least one service is required' });
       return;
     }
 
-    // Validate booking time (e.g., "10:00 AM", "2:30 PM")
-    const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
-    if (!timeRegex.test(bookingTime)) {
-      res.status(400).json({
-        message: 'Invalid booking time format. Use format like "10:00 AM"',
-      });
-      return;
-    }
+    // Result array to store created bookings
+    const createdBookings = [];
 
-    // Validate location if provided
-    if (location) {
-      if (
-        !location.type ||
-        location.type !== 'Point' ||
-        !Array.isArray(location.coordinates) ||
-        location.coordinates.length !== 2
-      ) {
-        res.status(400).json({
-          message:
-            'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
-        });
-        return;
-      }
-    }
-
-    // Check if the service exists
-    const service = await Service.findById(serviceId);
-    if (!service) {
-      res.status(404).json({ message: 'Service not found' });
-      return;
-    }
-
-    // Validate and format the date using moment.js
-    const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format(
-      'YYYY-MM-DD'
-    );
-    if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
-      res
-        .status(400)
-        .json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
-      return;
-    }
-
-    // Build the booking object
-    const newBookingData: NewBookingData = {
-      client: customerId as any,
-      service: serviceId as any,
-      bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
-      bookingTime: bookingTime, // Save time as string,
-    };
-
-    // If extra tasks are provided, add them to the booking
-    if (extraTasks && extraTasks.length > 0) {
-      newBookingData.extraTasks = extraTasks.map((task) => ({
-        description: task.description,
-        extraPrice: task.extraPrice,
-      }));
-    }
-
-    // If location is provided, add it to the booking
-    if (location) {
-      newBookingData.location = location;
-    }
-
-    // Create the new booking
-    const newBooking = await Booking.create({
-      ...newBookingData,
-      serviceProvider: service.serviceProvider,
-    });
-    const populatedBooking = await Booking.findById(newBooking._id)
-      .populate('service', 'name description')
-      .populate('client', 'name email')
-      .populate('serviceProvider', 'name email')
-      .exec();
-    console.log('PopulatedBooking ', populatedBooking);
-    await populatedBooking.save();
-
-    // if (populatedBooking) {
-    //   // Extract necessary information
-    //   const clientEmail = (populatedBooking.client as any).email;
-    //   const clientName = (populatedBooking.client as any).name;
-    //   const serviceName = (populatedBooking.service as any).name;
-    //   const bookingDate = (populatedBooking.bookingDate as any).toDateString();
-    //   const bookingTime = populatedBooking.bookingTime as any;
-    //   const serviceProviderEmail = (populatedBooking.serviceProvider as any)
-    //     .email;
-    //   const serviceProviderName = (populatedBooking.serviceProvider as any)
-    //     .name;
-
-    //   // Send email to client
-    //   console.log("Client ema", clientEmail)
-    //   await addEmailJob({
-    //     email: clientEmail,
-    //     subject: 'Booking Confirmation',
-    //     content: `Hello ${clientName},\n\nYour booking for ${serviceName} on ${bookingDate} at ${bookingTime} has been confirmed.\n\nThank you for choosing our service.\n\nBest,\nService Provider`,
-    //   });
-    //   console.log("Client ema", serviceProviderEmail);
-    //   // Send email to service provider
-    //   await addEmailJob({
-    //     email: serviceProviderEmail,
-    //     subject: 'New Booking',
-    //     content: `Hello ${serviceProviderName},\n\nYou have a new booking for ${serviceName} on ${bookingDate} at ${bookingTime}.\n\nBest,\nService`,
-    //   });
-    // } else {
-    //   res.status(404).json({ message: 'Failed to Send email' });
-    // }
-    await addAuditLogJob({
-      action: 'CREATE_BOOKING',
-      userId: customerId,
-      role: 'CLIENT',
-      targetId: newBooking._id,
-      metadata: {
-        service: serviceId,
-        bookingDate: formattedBookingDate,
+    // Loop through each service and create a booking
+    for (const serviceData of services) {
+      const {
+        serviceId,
+        bookingDate,
         bookingTime,
         extraTasks,
         location,
-      },
-      username: req.user.name,
-      serviceProviderId: service.serviceProvider,
-    })
+      } = serviceData;
 
-    res.status(201).json(newBooking);
+      // Validate required fields
+      if (!serviceId || !bookingDate || !bookingTime) {
+        res.status(400).json({ message: 'All fields are required for each service' });
+        return;
+      }
+
+      // Validate booking time (e.g., "10:00 AM", "2:30 PM")
+      const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
+      if (!timeRegex.test(bookingTime)) {
+        res.status(400).json({
+          message: 'Invalid booking time format. Use format like "10:00 AM"',
+        });
+        return;
+      }
+
+      // Validate location if provided
+      if (location) {
+        if (
+          !location.type ||
+          location.type !== 'Point' ||
+          !Array.isArray(location.coordinates) ||
+          location.coordinates.length !== 2
+        ) {
+          res.status(400).json({
+            message:
+              'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
+          });
+          return;
+        }
+      }
+
+      // Check if the service exists
+      const service = await Service.findById(serviceId);
+      if (!service) {
+        res.status(404).json({ message: 'Service not found' });
+        return;
+      }
+
+      // Validate and format the date using moment.js
+      const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format(
+        'YYYY-MM-DD'
+      );
+      if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
+        res
+          .status(400)
+          .json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
+        return;
+      }
+
+      // Build the booking object
+      const newBookingData: NewBookingData = {
+        client: customerId as any,
+        service: serviceId as any,
+        bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
+        bookingTime: bookingTime, // Save time as string
+      };
+
+      // If extra tasks are provided, add them to the booking
+      if (extraTasks && extraTasks.length > 0) {
+        newBookingData.extraTasks = extraTasks.map((task) => ({
+          description: task.description,
+          extraPrice: task.extraPrice,
+        }));
+      }
+
+      // If location is provided, add it to the booking
+      if (location) {
+        newBookingData.location = location;
+      }
+
+      // Create the new booking
+      const newBooking = await Booking.create({
+        ...newBookingData,
+        serviceProvider: service.serviceProvider,
+      });
+
+      // Populate the booking with necessary details
+      const populatedBooking = await Booking.findById(newBooking._id)
+        .populate('service', 'name description')
+        .populate('client', 'name email')
+        .populate('serviceProvider', 'name email')
+        .exec();
+
+      console.log('PopulatedBooking ', populatedBooking);
+
+      await populatedBooking.save();
+      createdBookings.push(populatedBooking); // Add to result array
+
+      await addAuditLogJob({
+        action: 'CREATE_BOOKING',
+        userId: customerId,
+        role: 'CLIENT',
+        targetId: newBooking._id,
+        metadata: {
+          service: serviceId,
+          bookingDate: formattedBookingDate,
+          bookingTime,
+          extraTasks,
+          location,
+        },
+        username: req.user.name,
+        serviceProviderId: service.serviceProvider,
+      });
+    }
+
+    res.status(201).json({ message: 'Bookings created successfully', bookings: createdBookings });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+
+
+
+
+
 export const getCustomerBookings = async (
   req: RequestWithUser,
   res: Response
@@ -216,6 +219,8 @@ export const getCustomerBookings = async (
     res.status(500).json({ message: error.message });
   }
 };
+
+
 // Delete a Booking
 export const deleteBooking = async (
   req: RequestWithUser,
@@ -342,100 +347,164 @@ export const getAllServiceProviders = async (
 
 
 //PUBLIC ROUTES MADE BY  HARSH TO DO BOOKING WITHOUT AUTHENITCAITON AND GET BOOKINGS
-export const createBooking2 = async (req: Request, res: Response): Promise<void> => {
+export const createBooking2 = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const customerId = req.body.clientId; // Take customer ID from req.userId or req.body.clientId
-    if (!customerId) {
-      res.status(400).json({ message: 'Client ID is required' });
-      return;
-    }
-
+    const customerId = req.body.clientId; // Assuming customer ID is extracted from the authenticated user
     const {
-      serviceId,
-      bookingDate,
-      bookingTime,
-      extraTasks,
-      location,
+      services, // Accept an array of services
     }: {
-      serviceId: string;
-      bookingDate: string;
-      bookingTime: string;
-      extraTasks?: ExtraTask[];
-      location?: Location;
+      services: {
+        serviceId: string;
+        bookingDate: string;
+        bookingTime: string;
+        extraTasks?: ExtraTask[];
+        location?: Location;
+        address?:string;
+      }[];
     } = req.body;
 
-    // Validate required fields
-    if (!serviceId || !bookingDate || !bookingTime) {
-      res.status(400).json({ message: 'All fields are required' });
+    // Validate that services array is provided
+    if (!services || services.length === 0) {
+      res.status(400).json({ message: 'At least one service is required' });
       return;
     }
 
-    // Validate booking time (e.g., "10:00 AM", "2:30 PM")
-    const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
-    if (!timeRegex.test(bookingTime)) {
-      res.status(400).json({ message: 'Invalid booking time format. Use format like "10:00 AM"' });
-      return;
-    }
+    // Result array to store created bookings
+    const createdBookings = [];
 
-    // Validate location if provided
-    if (location) {
-      if (
-        !location.type ||
-        location.type !== 'Point' ||
-        !Array.isArray(location.coordinates) ||
-        location.coordinates.length !== 2
-      ) {
+    // Loop through each service and create a booking
+    for (const serviceData of services) {
+      const {
+        serviceId,
+        bookingDate,
+        bookingTime,
+        extraTasks,
+        location,
+      } = serviceData;
+
+      // Validate required fields
+      if (!serviceId || !bookingDate || !bookingTime) {
+        res.status(400).json({ message: 'All fields are required for each service' });
+        return;
+      }
+
+      // Validate booking time (e.g., "10:00 AM", "2:30 PM")
+      const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
+      if (!timeRegex.test(bookingTime)) {
         res.status(400).json({
-          message: 'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
+          message: 'Invalid booking time format. Use format like "10:00 AM"',
         });
         return;
       }
+
+      // Validate location if provided
+      if (location) {
+        if (
+          !location.type ||
+          location.type !== 'Point' ||
+          !Array.isArray(location.coordinates) ||
+          location.coordinates.length !== 2
+        ) {
+          res.status(400).json({
+            message:
+              'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
+          });
+          return;
+        }
+      }
+
+      // Check if the service exists
+      const service = await Service.findById(serviceId);
+      if (!service) {
+        res.status(404).json({ message: 'Service not found' });
+        return;
+      }
+
+      // Validate and format the date using moment.js
+      const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format(
+        'YYYY-MM-DD'
+      );
+      if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
+        res
+          .status(400)
+          .json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
+        return;
+      }
+
+      // Build the booking object
+      const newBookingData: NewBookingData = {
+        client: customerId as any,
+        service: serviceId as any,
+        bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`), // Only save the date part
+        bookingTime: bookingTime, // Save time as string
+      };
+
+      // If extra tasks are provided, add them to the booking
+      if (extraTasks && extraTasks.length > 0) {
+        newBookingData.extraTasks = extraTasks.map((task) => ({
+          description: task.description,
+          extraPrice: task.extraPrice,
+        }));
+      }
+
+      // If location is provided, add it to the booking
+      if (location) {
+        newBookingData.location = location;
+      }
+
+      // Create the new booking
+      const newBooking = await Booking.create({
+        ...newBookingData,
+        serviceProvider: service.serviceProvider,
+      });
+
+      // Populate the booking with necessary details
+      const populatedBooking = await Booking.findById(newBooking._id)
+        .populate('service', 'name description')
+        .populate('client', 'name email')
+        .populate('serviceProvider', 'name email')
+        .exec();
+
+      console.log('PopulatedBooking ', populatedBooking);
+
+      await populatedBooking.save();
+      createdBookings.push(populatedBooking); // Add to result array
+
+      await addAuditLogJob({
+        action: 'CREATE_BOOKING',
+        userId: customerId,
+        role: 'CLIENT',
+        targetId: newBooking._id,
+        metadata: {
+          service: serviceId,
+          bookingDate: formattedBookingDate,
+          bookingTime,
+          extraTasks,
+          location,
+        },
+        username: req.user.name,
+        serviceProviderId: service.serviceProvider,
+      });
     }
 
-    // Check if the service exists
-    const service = await Service.findById(serviceId);
-    if (!service) {
-      res.status(404).json({ message: 'Service not found' });
-      return;
-    }
-
-    // Validate and format the date using moment.js
-    const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format('YYYY-MM-DD');
-    if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
-      res.status(400).json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
-      return;
-    }
-
-    // Build the booking object
-    const newBookingData: NewBookingData = {
-      client: customerId as any,
-      service: serviceId as any,
-      bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`),
-      bookingTime: bookingTime,
-    };
-
-    // If extra tasks are provided, add them to the booking
-    if (extraTasks && extraTasks.length > 0) {
-      newBookingData.extraTasks = extraTasks.map((task) => ({
-        description: task.description,
-        extraPrice: task.extraPrice,
-      }));
-    }
-
-    // If location is provided, add it to the booking
-    if (location) {
-      newBookingData.location = location;
-    }
-
-    // Create the new booking
-    const newBooking = await Booking.create({ ...newBookingData, serviceProvider: service.serviceProvider });
-
-    res.status(201).json(newBooking);
+    res.status(201).json({ message: 'Bookings created successfully', bookings: createdBookings });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+
+
+
+
+
 
 
 
