@@ -23,15 +23,15 @@ export const uploadFileToS3 = async (
     throw new Error('Invalid file data');
   }
   console.time("upload" );
-  const buffer = await sharp(file.buffer)
-    .resize({})
-    .toBuffer();
+  // const buffer = await sharp(file.buffer)
+  //   .resize({})
+  //   .toBuffer();
   console.timeEnd("upload");
 
   const params = {
     Bucket: bucketName,
     Key: Date.now() + file.originalname,
-    Body: buffer,
+    Body:file.buffer,
     ContentType: file.mimetype,
   };
 
