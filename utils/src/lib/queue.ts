@@ -42,7 +42,7 @@ const emailWorker = new Worker(
 
     try {
       // Make a request to the email service API to send an email
-      const response = await axios.post('http://localhost:5005/email/send', {
+      const response = await axios.post('http://localhost:5005/email-service/send', {
         email,
         subject,
         content,

@@ -50,7 +50,8 @@ export const getAgentDashboard = async (req: RequestWithUser, res  : Response , 
         completedBookings: completedBookings.length,
       },
       username: req.user.name,
-      serviceProviderId: bookings[0].serviceProvider
+      serviceProviderId: bookings[0].serviceProvider,
+      targetId : agentId
     });
     return res.status(200).json({
       totalBookings: bookings.length,
@@ -62,21 +63,22 @@ export const getAgentDashboard = async (req: RequestWithUser, res  : Response , 
     return next(new ApiError('Failed to fetch dashboard data', 500));
   }
 };
+
+
 export const updateBookingStatus = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     const { bookingId } = req.params;
     const { status } = req.body;
     const agentId = req.user.id;
+    const agentName = req.user.name;
 
-    // Define all valid statuses
-    const validStatuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'Not Assigned'];
+    const validStatuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Not Assigned'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         error: 'Invalid status. Must be one of: Pending, Confirmed, In Progress, Completed, Cancelled, Not Assigned'
       });
     }
 
-    // Find and validate booking
     const booking = await Booking.findOne({
       _id: bookingId,
       agent: agentId
@@ -88,39 +90,36 @@ export const updateBookingStatus = async (req: RequestWithUser, res: Response, n
       });
     }
 
-    // Define valid transitions for each status
     const validTransitions: { [key: string]: string[] } = {
       'Not Assigned': ['Pending', 'Confirmed'],
-      'Pending': ['Confirmed', 'Cancelled'],
+      'Pending': ['In Progress', 'Cancelled'],
       'Confirmed': ['In Progress', 'Cancelled'],
       'In Progress': ['Completed', 'Cancelled'],
       'Completed': [],
       'Cancelled': []
     };
 
-    // Validate status transition
     if (!validTransitions[booking.status]?.includes(status)) {
       return res.status(400).json({
         error: `Cannot transition from ${booking.status} to ${status}`
       });
     }
 
-    // Update status
+    const previousStatus = booking.status;
     booking.status = status;
     booking.updatedAt = new Date();
     await booking.save();
 
-    // Add audit log
     await addAuditLogJob({
       action: 'UPDATE_BOOKING_STATUS',
       userId: agentId,
       role: 'AGENT',
       targetId: bookingId,
       metadata: {
-        previousStatus: booking.status,
+        previousStatus,
         newStatus: status,
       },
-      username: req.user.name,
+      username: agentName,
       serviceProviderId: booking.serviceProvider
     });
 
@@ -133,6 +132,7 @@ export const updateBookingStatus = async (req: RequestWithUser, res: Response, n
     return next(new ApiError('Failed to update booking status', 500));
   }
 };
+
 // Add or update extra task with price calculation
 export const manageExtraTask = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -323,11 +323,11 @@ export const markBookingAsPaid = async (req: RequestWithUser, res: Response, nex
     }
 
     // Don't allow marking as paid if booking is completed or cancelled
-    if (booking.status === 'Cancelled' || booking.status === 'Completed') {
-      return res.status(400).json({
-        error: 'Cannot mark cancelled or completed bookings as paid'
-      });
-    }
+    // if (booking.status === 'Completed') {
+    //   return res.status(400).json({
+    //     error: 'Cannot mark cancelled or completed bookings as paid'
+    //   });
+    // }
 
     // Recalculate total price to ensure consistency
     const extraTasksTotal = booking.extraTasks.reduce((sum, task) => 

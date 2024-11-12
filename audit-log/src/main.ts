@@ -18,10 +18,9 @@ app.use(express.urlencoded({ extended: true }));
 import dotenv from 'dotenv';
 dotenv.config();
 app.use(cors({
-  origin: [ 'http://localhost:5173', 'https://ruralsync-service-provider.vercel.app'],
+  origin: [ 'http://localhost:5173','http://localhost:5174', "http://localhost:5175", 'https://ruralsync-service-provider.vercel.app'],
   credentials: true
 }))
-
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.get('/', (req, res) => {
@@ -50,7 +49,7 @@ app.post("/audit-log/create" , async(req : Request, res : Response , next : Next
   }
 });
 
-app.get("/audit-log" , verifyJWT , isAuthorized(["SERVICE_PROVIDER"]) , async(req : RequestWithUser, res : Response , next : NextFunction) => {
+app.get("/audit-log" , verifyJWT("SERVICE_PROVIDER") , isAuthorized(["SERVICE_PROVIDER"]) , async(req : RequestWithUser, res : Response , next : NextFunction) => {
   try {
       const serviceProviderId = req.user.id;
 

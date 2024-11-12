@@ -16,7 +16,6 @@ const router = express.Router();
 router.get(
   '/dashboard',
   verifyJWT('AGENT'),
-  isAuthorized(['AGENT']),
   getAgentDashboard
 );
 router.get(

@@ -43,6 +43,6 @@ router.delete(
 );
 
 router.get('/services', getAllServices);
-
+router.get('/service/:id', getServiceById);
 router.get('/service-provider', getAllServiceProviders);
 export default router;
