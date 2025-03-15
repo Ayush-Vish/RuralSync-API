@@ -8,53 +8,53 @@ services:
     ports:
       - "80:80"
     depends_on:
-      # - agent
-      # - auth
-      # - customer
-      # - shopkeeper
-      # - email-service
+      - agent
+      - auth
+      - customer
+      - shopkeeper
+      - email-service
       - redis
-      # - audit-log
+      - audit-log
      
 
-  # agent:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: agent
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5000:5000"
-  # auth:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: auth
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5001:5001"
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: agent
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5000:5000"
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: auth
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5001:5001"
 
-  # customer:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: customer
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5002:5002"
-  # shopkeeper:
+  customer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: customer
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5002:5002"
+  shopkeeper:
     build:
       context: .
       dockerfile: Dockerfile
@@ -73,28 +73,28 @@ services:
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     command: ["redis-server", "--appendonly", "yes"]
-  # email-service:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: email-service
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5005:5005"
-  # audit-log:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     args:
-  #       PROJECT: audit-log
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=production
-  #   ports:
-  #     - "5006:5006"
+  email-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: email-service
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5005:5005"
+  audit-log:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: audit-log
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5006:5006"
 
