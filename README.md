@@ -1,89 +1,175 @@
-# To  up the server using docker-compose
-``` 
-    docker-compose up --build
- ``` 
-### Note : It will not restart on code change. You have to run this command again. 
 
+# RuralSync API
 
-# Org
+A comprehensive microservices-based platform that connects customers seeking services with service providers and their agents. The system facilitates service booking, management, and delivery through a distributed architecture.
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+## Overview
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+RuralSync API is a service marketplace platform designed to bridge the gap between customers needing services and service providers who can deliver them through their agents. The system supports three primary user roles:
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/express?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+- **CLIENT**: Customers seeking services (book services, manage bookings, write reviews)
+- **SERVICE_PROVIDER**: Business owners offering services (manage organization, add services, assign agents)  
+- **AGENT**: Service technicians delivering services (handle assigned bookings, update status, manage tasks)
 
-## Finish your CI setup
+## Architecture
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/RPaxqYZLGJ)
+The system follows a microservices architecture with six core services orchestrated through an nginx API gateway [1](#0-0) .
 
+### Services
 
-## Run tasks
+| Service | Port | Purpose |
+|---------|------|---------|
+| **nginx** | 80 | API Gateway and request routing |
+| **auth** | 5001 | JWT Authentication |
+| **customer** | 5002 | Client operations and booking management |
+| **shopkeeper** | 5003 | Service provider management |
+| **agent** | 5000 | Agent task management |
+| **email-service** | 5005 | Email notifications |
+| **audit-log** | 5006 | Activity tracking and logging |
 
-To run the dev server for your app, use:
+## Technology Stack
 
-```sh
-npx nx serve rural-backend
+- **Runtime**: Node.js + Express.js
+- **Language**: TypeScript
+- **Database**: MongoDB + Mongoose
+- **Message Queue**: BullMQ + Redis
+- **Authentication**: JWT + bcrypt
+- **File Storage**: AWS S3
+- **Email Service**: nodemailer
+- **API Gateway**: nginx
+- **Containerization**: Docker + docker-compose
+
+## Customer Service API
+
+The Customer Service is the core microservice handling all client-facing operations [2](#0-1) .
+
+### Key Features
+
+#### Booking Management
+- Create authenticated and public bookings [3](#0-2) 
+- Support for multiple services per booking
+- Extra tasks and location data support [4](#0-3) 
+- Booking status tracking and management
+
+#### Service Discovery
+- Browse available services and providers [5](#0-4) 
+- Service search and filtering capabilities
+- Provider information with ratings and reviews
+
+#### Review System
+- Rate and review service providers [6](#0-5) 
+- Automatic average rating calculations
+- Duplicate review prevention
+
+### API Endpoints
+
+#### Booking Endpoints
+```
+POST   /client/booking/book              - Create authenticated booking
+POST   /client/booking/book2             - Create public booking  
+GET    /client/booking/bookings          - Get customer bookings
+GET    /client/booking/services          - Get all services
+DELETE /client/booking/bookings/:id      - Cancel booking
 ```
 
-To create a production bundle:
-
-```sh
-npx nx build rural-backend
+#### Profile Endpoints
+```
+GET    /client/customers/profile         - Get customer profile
+PUT    /client/customers/profile-update  - Update profile
+PATCH  /client/customers/password        - Change password
 ```
 
-To see all available targets to run for a project, run:
-
-```sh
-npx nx show project rural-backend
+#### Review Endpoints
 ```
-        
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
-```sh
-npx nx g @nx/express:app demo
+POST   /client/reviews                   - Create review
+PUT    /client/reviews/:reviewId         - Update review
+DELETE /client/reviews/:reviewId         - Delete review
+GET    /client/customers/reviews         - Get customer reviews
 ```
 
-To generate a new library, use:
+## Data Models
 
-```sh
-npx nx g @nx/node:lib mylib
+### Booking Model
+The booking model represents service requests with comprehensive tracking [7](#0-6) :
+
+- Client and service provider references
+- Booking date/time scheduling
+- Status tracking (`"Not Assigned"`, `"Pending"`, `"In Progress"`, `"Completed"`)
+- Payment status (`"Paid"`, `"Unpaid"`)
+- Extra tasks with pricing
+- GeoJSON location support
+- Agent assignment
+
+## Authentication & Authorization
+
+The system implements role-based authentication using JWT tokens [8](#0-7) :
+
+- Role-specific token validation (`CLIENT`, `SERVICE_PROVIDER`, `AGENT`)
+- Cookie and Authorization header support
+- User context injection for protected routes
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Docker and Docker Compose
+- MongoDB
+- Redis
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/Ayush-Vish/RuralSync-API.git
+cd RuralSync-API
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+2. Install dependencies
+```bash
+npm install
+```
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+3. Start services with Docker
+```bash
+docker-compose up
+```
 
+4. The API gateway will be available at `http://localhost:80`
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Environment Variables
 
-## Install Nx Console
+Configure the following environment variables:
+- `CUSTOMER_PORT`: Customer service port (default: 5002)
+- `NODE_ENV`: Environment mode
+- Database connection strings
+- JWT secrets
+- AWS S3 credentials
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+## Development
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+The project uses Nx workspace for monorepo management. Each service can be developed and deployed independently while sharing common utilities and database models.
 
-## Useful links
+### Project Structure
+```
+├── customer/           # Customer service
+├── shopkeeper/         # Service provider service  
+├── agent/             # Agent service
+├── auth/              # Authentication service
+├── email-service/     # Email notification service
+├── audit-log/         # Audit logging service
+├── api-gateway/       # nginx configuration
+├── db/                # Shared database models
+└── utils/             # Shared utilities
+```
 
-Learn more:
+## Contributing
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/express?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## License
+
+This project is licensed under the MIT License.
