@@ -15,8 +15,6 @@ services:
       - email-service
       - redis
       - audit-log
-     
-
   agent:
     build:
       context: .
@@ -97,4 +95,3 @@ services:
       - NODE_ENV=production
     ports:
       - "5006:5006"
-

@@ -1,6 +1,5 @@
 
 import { NextFunction, Response } from 'express';
-// import { Agent, Client, ServiceProvider } from '@org/db';
 import { Booking, RequestWithUser, Service } from '@org/db';
 import { addAuditLogJob, ApiError } from '@org/utils';
 
@@ -11,7 +10,6 @@ export const getBooking = async (req: RequestWithUser, res: Response, next: Next
     const { bookingId } = req.params;
     console.log("AAAAAAAAAAAAA",bookingId);
 
-    // Find the booking
     const booking =await  Booking.findById(bookingId)
                     .populate('client', 'name email phone')
                     .populate('agent', 'name email phone')
@@ -22,14 +20,12 @@ export const getBooking = async (req: RequestWithUser, res: Response, next: Next
   }
 }
 
-// Show all pending, in-progress, and completed bookings
 export const getAgentDashboard = async (req: RequestWithUser, res  : Response , next:NextFunction) => {
   try {
     console.log("AAAAAAAAAAAAA",req.user);
     const agentId = req.user.id;
 
     console.log("AAAAAAAAAAAAA",agentId);
-    // Find all bookings assigned to this agent
     const bookings = await Booking.find({ agent: agentId })
       // .populate('customer', 'name') // Populate customer name for each booking
       // .populate('serviceProvider', 'name'); // Populate service provider name
@@ -38,7 +34,6 @@ export const getAgentDashboard = async (req: RequestWithUser, res  : Response , 
     const inProgressBookings = bookings.filter(b => b.status === 'In Progress');
     const completedBookings = bookings.filter(b => b.status === 'Completed');
 
-    // Send the data for the agent's dashboard
     await addAuditLogJob({
       action: 'FETCH_AGENT_DASHBOARD',
       userId: agentId,

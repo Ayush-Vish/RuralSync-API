@@ -66,6 +66,6 @@ app.use(errorMiddleware);
 
 const port = process.env.AUDIT_PORT || 5006;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/audit-log`);
+  console.log(`Listening at ${process.env.LOCAL_DOMAIN}:${port}/audit-log`);
 });
 server.on('error', console.error);

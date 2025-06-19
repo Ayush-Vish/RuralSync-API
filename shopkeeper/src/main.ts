@@ -39,6 +39,6 @@ app.use("*" , errorMiddleware);
 
 const port = process.env.SHOPKEEPER_PORT || 5003;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/shopkeeper`);
+  console.log(`Listening at ${process.env.LOCAL_DOMAIN}:${port}/shopkeeper`);
 });
 server.on('error', console.error);

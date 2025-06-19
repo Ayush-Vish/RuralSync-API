@@ -34,6 +34,6 @@ app.use('/client',reviewRoutes)
 connectToDb()
 const port = process.env.CUSTOMER_PORT || 5002;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/client`);
+  console.log(`Listening at ${process.env.LOCAL_DOMAIN}:${port}/client`);
 });
 server.on('error', console.error);

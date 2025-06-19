@@ -19,6 +19,6 @@ app.use('/auth' ,authRoutes);
 app.use("*" ,errorMiddleware )
 const port =process.env.AUTH_PORT || 5001;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/auth`);
+  console.log(`Listening at ${process.env.LOCAL_DOMAIN}:${port}/auth`);
 });
 server.on('error', console.error);

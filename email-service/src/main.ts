@@ -22,6 +22,6 @@ app.use("/email-service" ,emailRoutes  );
 
 const port = process.env.EMAIL_PORT || 5005;
 const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/email`);
+  console.log(`Listening at ${process.env.LOCAL_DOMAIN}:${port}/email`);
 });
 server.on('error', console.error);

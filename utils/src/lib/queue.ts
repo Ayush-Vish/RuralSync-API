@@ -3,31 +3,31 @@ import { Queue, Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
 import axios from 'axios';
 
-// Connect to Redis
+
 const connection = new IORedis({
-  host: 'localhost',
+  host: 'redis',
   port: 6379,
   maxRetriesPerRequest: null,
 });
 
-// Define the email queue with options
+
 export const emailQueue = new Queue('emailQueue', {
   connection,
   defaultJobOptions: {
-    attempts: 3, // Retry job 3 times
-    backoff: { type: 'exponential', delay: 5000 }, // Delay between retries
+    attempts: 3, 
+    backoff: { type: 'exponential', delay: 5000 }, 
     removeOnComplete: true,
     removeOnFail: false,
   },
 });
 
-// Function to add email jobs to the queue
+
 export const addEmailJob = async (data) => {
   console.log('Adding email job:', data);
   await emailQueue.add('sendEmail', data);
 };
 
-// Worker to process email jobs
+
 const emailWorker = new Worker(
   'emailQueue',
   async (job) => {
@@ -41,8 +41,7 @@ const emailWorker = new Worker(
     console.log('Sending email to:', email);
 
     try {
-      // Make a request to the email service API to send an email
-      const response = await axios.post('http://localhost:5005/email-service/send', {
+      const response = await axios.post(`${process.env.LOCAL_DOMAIN}:5005/email-service/send`, {
         email,
         subject,
         content,
@@ -61,7 +60,6 @@ const emailWorker = new Worker(
   { connection }
 );
 
-// Event listeners for job failure and completion
 emailWorker.on('failed', (job, error) => {
   console.error(`Job ${job.id} failed with error:`, error.message);
 });
@@ -104,8 +102,7 @@ const auditLogWorker = new Worker(
     const { userId, role, action, targetId, metadata , username , serviceProviderId } = job.data;
 
     try {
-      // Send audit log data to a logging service or database
-      const response = await axios.post('http://localhost:5006/audit-log/create', {
+      const response = await axios.post(`${process.env.LOCAL_DOMAIN}:5006/audit-log/create`, {
         userId,
         role,
         action,
@@ -129,7 +126,6 @@ const auditLogWorker = new Worker(
   { connection }
 );
 
-// Event listeners for audit log worker job status
 auditLogWorker.on('failed', (job, error) => {
   console.error(`Audit log job ${job.id} failed with error:`, error.message);
 });
