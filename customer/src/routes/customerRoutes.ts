@@ -7,15 +7,17 @@ import {verifyJWT} from '@org/utils'
 
 const router = express.Router();
 
+router.get('/', (req, res) => {
+  res.send({ message: 'Welcome to customer profile routes!' });
+});
 
 
-
-router.get('/customers/profile',verifyJWT("CLIENT"), getCustomerProfile);
-
-
-router.put('/customers/profile-update',verifyJWT("CLIENT"), updateCustomerProfile);
+router.get('/profile',verifyJWT("CLIENT"), getCustomerProfile);
 
 
-router.patch('/customers/password',verifyJWT("CLIENT"), changePassword);
+router.put('/profile-update',verifyJWT("CLIENT"), updateCustomerProfile);
+
+
+router.patch('/password',verifyJWT("CLIENT"), changePassword);
 
 export default router;

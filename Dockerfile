@@ -25,7 +25,6 @@ COPY --from=builder /app/package*.json ./
 
 RUN npm install --only=production
 
-# Use the PORT from the environment variable
 ENV PORT=3000
 EXPOSE ${PORT}
 

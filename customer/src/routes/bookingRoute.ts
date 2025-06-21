@@ -4,10 +4,8 @@ import {
   getCustomerBookings,
   getCustomerBookings2,
   deleteBooking,
-  getAllServices,
-  getAllServiceProviders,
+
   createBooking2,
-  getServiceById,
   // getServices,
 } from '../controllers/booking';
 // import { authenticateUser } from '../middleware/authMiddleware.js';
@@ -33,7 +31,7 @@ router.get(
   getCustomerBookings
 );
 router.get('/bookings2/:clientId', getCustomerBookings2);
-router.get('/service/:id', getServiceById);
+
 // Route to delete a booking
 router.delete(
   '/bookings/:id',
@@ -42,7 +40,5 @@ router.delete(
   deleteBooking
 );
 
-router.get('/services', getAllServices);
-router.get('/service/:id', getServiceById);
-router.get('/service-provider', getAllServiceProviders);
+
 export default router;

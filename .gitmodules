@@ -1,0 +1,6 @@
+[submodule "Agent-RuralSync"]
+	path = Agent-RuralSync
+	url = https://github.com/Ayush-Vish/Agent-RuralSync
+[submodule "Service-provider-ruralsync"]
+	path = Service-provider-ruralsync
+	url = https://github.com/Ayush-Vish/Service-provider-ruralsync
