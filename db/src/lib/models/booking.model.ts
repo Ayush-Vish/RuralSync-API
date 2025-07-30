@@ -23,6 +23,11 @@ const bookingSchema = new mongoose.Schema({
     ref: 'Client',
     required: true,
   },
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customer',
+    required: true,
+  },
   serviceProvider: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ServiceProvider',

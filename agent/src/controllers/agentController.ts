@@ -22,14 +22,11 @@ export const getBooking = async (req: RequestWithUser, res: Response, next: Next
 
 export const getAgentDashboard = async (req: RequestWithUser, res  : Response , next:NextFunction) => {
   try {
-    console.log("AAAAAAAAAAAAA",req.user);
+
     const agentId = req.user.id;
 
-    console.log("AAAAAAAAAAAAA",agentId);
     const bookings = await Booking.find({ agent: agentId })
-      // .populate('customer', 'name') // Populate customer name for each booking
-      // .populate('serviceProvider', 'name'); // Populate service provider name
-      // Filter bookings based on status
+
     const pendingBookings = bookings.filter(b => b.status === 'Pending');
     const inProgressBookings = bookings.filter(b => b.status === 'In Progress');
     const completedBookings = bookings.filter(b => b.status === 'Completed');

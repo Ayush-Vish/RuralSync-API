@@ -1,11 +1,10 @@
-// Import necessary modules
-import { Queue, Worker, Job } from 'bullmq';
+import { Queue, Worker} from 'bullmq';
 import IORedis from 'ioredis';
 import axios from 'axios';
 
 
 const connection = new IORedis({
-  host: 'redis',
+  host: process.env.REDIS_HOST || 'localhost', 
   port: 6379,
   maxRetriesPerRequest: null,
 });

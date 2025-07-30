@@ -141,6 +141,8 @@ export const createBooking = async (
       const newBooking = await Booking.create({
         ...newBookingData,
         serviceProvider: service.serviceProvider,
+
+        customer: customerId,
       });
 
       // Populate the booking with necessary details
@@ -180,37 +182,37 @@ export const createBooking = async (
 };
 
 
-
-
-
-
-
-
-
 export const getCustomerBookings = async (
   req: RequestWithUser,
   res: Response
 ): Promise<void> => {
   try {
-    const customerId = req.user.id; // Assuming customer ID is extracted from authenticated user
-
+    const customerId = req.user.id; 
+    console.log('Customer ID:', customerId);
     // Validate that the customerId is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
       res.status(400).json({ message: 'Invalid customer ID' });
       return;
     }
+    
 
     // Fetch all bookings associated with the customer
     const customerBookings = await Booking.find({ customer: customerId }).sort({
       bookingDate: -1,
-    }); // Sort bookings by most recent first
+    }).populate('service')
+    .populate('serviceProvider' )
+    .populate('client')
+    .populate('agent')
+    .populate('extraTasks.description')
+    
 
+    console.log('Customer Bookings:', customerBookings);
     // Check if bookings are found
     if (customerBookings.length === 0) {
       res.status(404).json({ message: 'No bookings found for this customer' });
       return;
     }
-    
+
 
     // Return the bookings
     res.status(200).json(customerBookings);
@@ -301,167 +303,5 @@ export const getAllServices = async (
         500
       )
     );
-  }
-};
-
-//PUBLIC ROUTES MADE BY  HARSH TO DO BOOKING WITHOUT AUTHENITCAITON AND GET BOOKINGS
-export const createBooking2 = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    // Extract the clientId from the first item in the services array
-    const services = req.body.services;
-    if (!services || services.length === 0) {
-      res.status(400).json({ message: 'At least one service is required' });
-      return;
-    }
-    
-    const customerId = services[0].clientId;
-
-    // Result array to store created bookings
-    const createdBookings = [];
-
-    // Loop through each service and create a booking
-    for (const serviceData of services) {
-      const {
-        serviceId,
-        bookingDate,
-        bookingTime,
-        extraTasks,
-        location,
-        address
-      } = serviceData;
-
-      // Validate required fields
-      if (!serviceId || !bookingDate || !bookingTime) {
-        res.status(400).json({ message: 'All fields are required for each service' });
-        return;
-      }
-
-      // Validate booking time (e.g., "10:00 AM", "2:30 PM")
-      const timeRegex = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i;
-      if (!timeRegex.test(bookingTime)) {
-        res.status(400).json({
-          message: 'Invalid booking time format. Use format like "10:00 AM"',
-        });
-        return;
-      }
-
-      // Validate location if provided
-      if (location) {
-        if (
-          !location.type ||
-          location.type !== 'Point' ||
-          !Array.isArray(location.coordinates) ||
-          location.coordinates.length !== 2
-        ) {
-          res.status(400).json({
-            message:
-              'Invalid location format. Location must be a geoJSON Point with [longitude, latitude]',
-          });
-          return;
-        }
-      }
-
-      // Check if the service exists
-      const service = await Service.findById(serviceId);
-      if (!service) {
-        res.status(404).json({ message: 'Service not found' });
-        return;
-      }
-
-      // Validate and format the date
-      const formattedBookingDate = moment(bookingDate, 'YYYY-MM-DD').format(
-        'YYYY-MM-DD'
-      );
-      if (!moment(formattedBookingDate, 'YYYY-MM-DD', true).isValid()) {
-        res
-          .status(400)
-          .json({ message: 'Invalid booking date format. Use "YYYY-MM-DD"' });
-        return;
-      }
-
-      // Build the booking object
-      const newBookingData: NewBookingData = {
-        client: customerId,
-        service: serviceId,
-        bookingDate: new Date(`${formattedBookingDate}T00:00:00Z`),
-        bookingTime,
-        address,
-      };
-
-      // If extra tasks are provided, add them to the booking
-      if (extraTasks && extraTasks.length > 0) {
-        newBookingData.extraTasks = extraTasks.map((task) => ({
-          description: task.description,
-          extraPrice: task.extraPrice,
-        }));
-      }
-
-      // If location is provided, add it to the booking
-      if (location) {
-        newBookingData.location = location;
-      }
-
-      // Create the new booking
-      const newBooking = await Booking.create({
-        ...newBookingData,
-        serviceProvider: service.serviceProvider,
-      });
-
-      // Populate the booking with necessary details
-      const populatedBooking = await Booking.findById(newBooking._id)
-        .populate('service', 'name description')
-        .populate('client', 'name email')
-        .populate('serviceProvider', 'name email')
-        .exec();
-
-      console.log('PopulatedBooking ', populatedBooking);
-
-      createdBookings.push(populatedBooking);
-
-      // Optionally add audit log logic here
-    }
-
-    res.status(201).json({ message: 'Bookings created successfully', bookings: createdBookings });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-
-
-
-
-
-
-export const getCustomerBookings2 = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const customerId = req.params.clientId; // Extract customer ID from path parameters
-
-    // Validate that the customerId is a valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      res.status(400).json({ message: 'Invalid customer ID' });
-      return;
-    }
-
-    // Fetch all bookings associated with the customer
-    const customerBookings = await Booking.find({ client: customerId })
-      .sort({ bookingDate: -1 }); // Sort bookings by most recent first
-
-    // Check if bookings are found
-    if (customerBookings.length === 0) {
-      res.status(404).json({ message: 'No bookings found for this customer' });
-      return;
-    }
-
-    // Return the bookings
-    res.status(200).json(customerBookings);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
   }
 };

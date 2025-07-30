@@ -7,10 +7,7 @@ import cookieParser from 'cookie-parser';
 
 import express from 'express';
 import * as path from 'path';
-import customerRoutes from './routes/customerRoutes'
-import bookingRoutes from './routes/bookingRoute'
-import reviewRoutes from './routes/reviewRoutes'
-import serviceroute from './routes/servicesRoute'
+import routes from './routes/customerRoutes'
 import { connectToDb } from '@org/db';
 
 const app = express();
@@ -27,15 +24,11 @@ app.use(cookieParser());
 app.use(express.json());
 
 
-
-app.use('/customer/' ,customerRoutes);
-app.use('/customer/booking',bookingRoutes);
-app.use('/customer/review',reviewRoutes)
-app.use("/customer/services", serviceroute)
+app.use('/customer', routes);
 
 connectToDb()
 const port = process.env.CUSTOMER_PORT || 5002;
 const server = app.listen(port, () => {
-  console.log(`Listening at ${process.env.LOCAL_DOMAIN}:${port}/client`);
+  console.log(`Listening at ${process.env.LOCAL_DOMAIN}:${port}`);
 });
 server.on('error', console.error);
